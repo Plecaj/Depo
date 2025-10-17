@@ -3,6 +3,7 @@ import ManagerBar from './components/ManagerBar/ManagerBar.jsx'
 import styles from './App.module.css'
 import data from './exampleData.json'
 import {createContext, useState} from "react";
+import HelpBar from "./components/HelpBar/HelpBar.jsx";
 
 export const PackagesData = createContext(null);
 
@@ -13,12 +14,18 @@ function App() {
     return(
         <PackagesData.Provider value={[packages, setPackages]}>
             <div className={styles.app}>
-                <div className={styles.Bar}>
-                    <ManagerBar/>
+                <div className={styles.HelpBar}>
+                    <HelpBar/>
                 </div>
-                <div className={styles.List}>
-                    <List/>
+                <div className={styles.column}>
+                    <div className={styles.Bar}>
+                        <ManagerBar/>
+                    </div>
+                    <div className={styles.List}>
+                        <List/>
+                    </div>
                 </div>
+
             </div>
         </PackagesData.Provider>
     );

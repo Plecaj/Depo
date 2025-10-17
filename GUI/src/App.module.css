@@ -4,16 +4,28 @@ html, body, #root {
 }
 .app{
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     height: 100vh;
 }
-
+.column{
+    flex:12;
+    display: flex;
+    flex-direction: column;
+}
 .List{
     flex: 8;
 }
 .Bar{
     flex:2;
 }
+.HelpBar{
+    flex:0.01;
+    transition: flex 1s ease-in-out;
+}
+.HelpBar:hover{
+    flex: 1;
+}
 *{
     box-sizing: border-box;
 }
+

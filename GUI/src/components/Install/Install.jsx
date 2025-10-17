@@ -8,9 +8,14 @@ function Install() {
     const [Package, setPackage] = useContext(PackagesData);
 
     const installPkg = () =>{
-        setPackage( Package.map((pkg) => {
-            return {...pkg, installed: true};
-        }) );
+        setPackage( Package.map( (pkg) => {
+            if(!pkg.installed){
+                return {...pkg, installed: true};
+            }
+            else{
+                return pkg;
+            }
+        }));
     }
 
     return(
