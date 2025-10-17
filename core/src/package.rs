@@ -1,11 +1,10 @@
-
 use serde::{Deserialize, Serialize};
 use crate::dependency::{Dependency, DependencyError};
 use thiserror::Error;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Package {
-    dependencies: Vec<Dependency>
+    pub dependencies: Vec<Dependency>
 }
 
 #[derive(Debug, Error)]
@@ -40,20 +39,5 @@ impl Package {
 
         Ok(true)
     }
-
-    pub fn install_dependencies(&self) -> Result<(), Vec<(String, PackageError)>> {
-        let mut errors = Vec::new();
-
-        for dep in &self.dependencies {
-            if let Err(e) = dep.install() {
-                errors.push((dep.name.clone(), PackageError::DependencyError(e)));
-            }
-        }
-
-        if errors.is_empty() {
-            Ok(())
-        } else {
-            Err(errors)
-        }
-    }
+    
 }

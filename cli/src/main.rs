@@ -1,5 +1,9 @@
 use clap::{Parser, Subcommand};
-use core::{serialization, package};
+use core::{
+    serialization,
+    build::{CMake, BuildSystem},
+    package::{Package, PackageError}
+};
 
 #[derive(Parser)]
 #[command(name = "pkg")]
@@ -17,6 +21,25 @@ enum Commands {
         url: String,
     },
     Install,
+    Build,
+}
+
+fn with_package<F>(file_name: &str, f: F) -> Result<(), Box<dyn std::error::Error>>
+where
+    F: FnOnce(&mut Package) -> Result<(), Box<dyn std::error::Error>>,
+{
+    let mut pkg = match serialization::load_package(file_name) {
+        Ok(pkg) => pkg,
+        Err(PackageError::PackageNotFound) => {
+            println!("Package file not found. Use the `init` command to create one.");
+            return Ok(());
+        }
+        Err(e) => return Err(Box::new(e)),
+    };
+
+    f(&mut pkg)?;
+    serialization::save_package(&pkg, file_name)?;
+    Ok(())
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -28,45 +51,45 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             if serialization::package_exists(file_name) {
                 println!("Package file already exists");
             } else {
-                let pkg = crate::package::Package::create();
+                let pkg = crate::Package::create();
                 serialization::save_package(&pkg, file_name)?;
                 println!("Initialized new package");
             }
         }
 
         Commands::Add { name, url } => {
-            match serialization::load_package(file_name) {
-                Ok(mut pkg) => {
-                    match pkg.add_dependency(name, url) {
-                        Ok(true) => println!("Added dependency: {} -> {}", name, url),
-                        Ok(false) => println!("Dependency '{}' already exists", name),
-                        Err(e) => eprintln!("Failed to add dependency '{}': {}", name, e),
-                    }
-                    serialization::save_package(&pkg, file_name)?;
+            with_package(file_name, |pkg| {
+                match pkg.add_dependency(name, url) {
+                    Ok(true) => println!("Added dependency: {} -> {}", name, url),
+                    Ok(false) => println!("Dependency '{}' already exists", name),
+                    Err(e) => eprintln!("Failed to add dependency '{}': {}", name, e),
                 }
-                Err(package::PackageError::PackageNotFound) => {
-                    println!("Package file not found. Use the `init` command to create one.");
-                }
-                Err(e) => return Err(Box::new(e)),
-            }
+                Ok(())
+            })?;
         }
 
         Commands::Install => {
-            match serialization::load_package(file_name) {
-                Ok(pkg) => match pkg.install_dependencies() {
-                    Ok(_) => println!("All dependencies installed successfully"),
-                    Err(errors) => {
-                        eprintln!("Some dependencies failed to install:");
-                        for (name, err) in errors {
-                            eprintln!("{} -> {}", name, err);
-                        }
+            with_package(file_name, |pkg| {
+                for dep in &pkg.dependencies {
+                    match dep.install() {
+                        Ok(_) => println!("Installed dependency '{}'", dep.name),
+                        Err(e) => eprintln!("Failed to install dependency '{}': {}", dep.name, e),
                     }
-                },
-                Err(package::PackageError::PackageNotFound) => {
-                    println!("Package file not found. Use the `init` command to create one");
                 }
-                Err(e) => return Err(Box::new(e)),
-            }
+                Ok(())
+            })?;
+        }
+
+        Commands::Build => {
+            with_package(file_name, |pkg| {
+                for dep in &pkg.dependencies {
+                    match CMake::build_dependency(&dep) {
+                        Ok(_) => println!("Built dependency '{}'", dep.name),
+                        Err(e) => eprintln!("Failed to build dependency '{}': {}", dep.name, e),
+                    }
+                }
+                Ok(())
+            })?;
         }
     }
     Ok(())
