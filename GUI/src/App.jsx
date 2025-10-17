@@ -1,17 +1,26 @@
 import List from './components/List/List.jsx'
 import ManagerBar from './components/ManagerBar/ManagerBar.jsx'
 import styles from './App.module.css'
+import data from './exampleData.json'
+import {createContext, useState} from "react";
+
+export const PackagesData = createContext(null);
 
 function App() {
+
+    const [packages, setPackages] = useState(data);
+
     return(
-        <div className={styles.app}>
-            <div className={styles.Bar}>
-                <ManagerBar />
+        <PackagesData.Provider value={[packages, setPackages]}>
+            <div className={styles.app}>
+                <div className={styles.Bar}>
+                    <ManagerBar/>
+                </div>
+                <div className={styles.List}>
+                    <List/>
+                </div>
             </div>
-            <div className={styles.List}>
-                <List />
-            </div>
-        </div>
+        </PackagesData.Provider>
     );
 }
 

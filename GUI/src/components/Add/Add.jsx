@@ -1,6 +1,6 @@
 import AddWindow from "./AddWindow.jsx";
 import styles from "./Add.module.css";
-import React, {useEffect, useState} from "react";
+import React, {useState} from "react";
 
 
 function Add() {

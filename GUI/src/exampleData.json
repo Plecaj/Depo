@@ -1,22 +1,27 @@
 [
   {
     "name": "package1",
-    "version": "12.0.3v"
+    "version": "12.0.3v",
+    "installed": false
   },
   {
     "name": "package2",
-    "version": "3.4.1v"
+    "version": "3.4.1v",
+    "installed": false
   },
   {
     "name": "package3",
-    "version": "7.2.0v"
+    "version": "7.2.0v",
+    "installed": false
   },
   {
     "name": "package4",
-    "version": "1.8.5v"
+    "version": "1.8.5v",
+    "installed": false
   },
   {
     "name": "package5",
-    "version": "9.6.2v"
+    "version": "9.6.2v",
+    "installed": false
   }
 ]
