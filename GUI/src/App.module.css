@@ -1,0 +1,19 @@
+html, body, #root {
+    margin: 0;
+    padding: 0;
+}
+.app{
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+.List{
+    flex: 8;
+}
+.Bar{
+    flex:2;
+}
+*{
+    box-sizing: border-box;
+}
