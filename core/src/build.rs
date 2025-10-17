@@ -16,16 +16,11 @@ pub enum BuildError {
 
     #[error("IO error: {0}")]
     Io(#[from] io::Error),
-
-    #[error("Invalid path: {0}")]
-    InvalidPath(PathBuf),
-
-    #[error("Unknown build error: {0}")]
-    Other(String),
 }
 
 pub trait BuildSystem {
     fn build_dependency(pkg: &Dependency) -> Result<(), BuildError>;
+    fn generate_dependency_bridge(deps: &[Dependency]) -> Result<(), io::Error>;
 }
 pub struct CMake;
 impl BuildSystem for CMake {
@@ -66,23 +61,24 @@ impl BuildSystem for CMake {
                 dep.name
             )));
         }
+        Ok(())
+    }
 
-        let mut file = File::options()
-            .create(true)
-            .append(true)
-            .open("deps/CMakeIncludes.cmake")?;
+    fn generate_dependency_bridge(deps: &[Dependency]) -> Result<(), io::Error>{
+        let mut include_file = File::create("deps/CMakeIncludes.cmake")?;
+        let mut links_file = File::create("deps/CMakeLinks.cmake")?;
 
-        let dep_str = dep_path.to_string_lossy().replace("\\", "/");
-        writeln!(file, "add_subdirectory({})", dep_str)?;
-        writeln!(file, "include_directories({}/include)", dep_str)?;
+        for dep in deps {
+            let dep_path = Path::new("deps")
+                .join(&dep.name)
+                .to_string_lossy()
+                .replace("\\", "/");
 
-        let mut links_file = File::options()
-            .create(true)
-            .append(true)
-            .open("deps/CMakeLinks.cmake")?;
+            writeln!(include_file, "add_subdirectory({})", dep_path)?;
+            writeln!(include_file, "include_directories({}/include)", dep_path)?;
+            writeln!(links_file, "target_link_libraries(main PRIVATE {})", dep.name)?;
+        }
 
-        writeln!(links_file, "target_link_libraries(main PRIVATE {})", dep.name)?;
-        
         Ok(())
     }
 }

@@ -80,6 +80,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     Err(e) => eprintln!("Failed to build dependency '{}': {}", dep.name, e),
                 }
             }
+            CMake::generate_dependency_bridge(&pkg.dependencies)?;
         }
         // Init is being checked in if statement before match to avoid repetition
         // Because every other variant needs data stored inside package.yaml
