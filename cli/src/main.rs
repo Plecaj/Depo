@@ -57,7 +57,7 @@ async fn main() -> anyhow::Result<()> {
                 return Ok(());
             }
 
-            let options: Vec<String> = candidates.iter().map(|c| c.name.clone()).collect();
+            let options: Vec<String> = candidates.iter().map(|c| c.full_name.clone()).collect();
 
             let selection = dialoguer::Select::new()
                 .with_prompt("Select a dependency")

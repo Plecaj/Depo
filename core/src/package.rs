@@ -58,7 +58,8 @@ impl Package {
             .iter()
             .filter_map(|repo| {
                 Some(Dependency {
-                    name: repo["full_name"].as_str()?.to_string(),
+                    name: repo["name"].as_str()?.to_string(),
+                    full_name: repo["full_name"].as_str()?.to_string(),
                     url: repo["html_url"].as_str()?.to_string(),
                 })
             })

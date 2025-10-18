@@ -47,6 +47,7 @@ fn build_dependencies(path: &str) -> Result<(), String> {
     for dep in pkg.dependencies.iter_mut() {
         CMake::build_dependency(dep).map_err(|e| e.to_string())?;
     }
+    CMake::generate_dependency_bridge(&pkg.dependencies).map_err(|e| e.to_string())?;;
     Ok(())
 }
 pub fn run() {
