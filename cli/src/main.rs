@@ -2,7 +2,8 @@ use clap::{Parser, Subcommand};
 use pkgcore::{
     serialization,
     build::{CMake, BuildSystem},
-    package::{Package}
+    package::{Package},
+    config::Config,
 };
 
 #[derive(Parser)]
@@ -18,13 +19,31 @@ enum Commands {
     Init,
     Add {
         name: String,
+        #[arg(short, long)]
+        version: Option<String>,
     },
     Delete {
         name: String
     },
     Install,
     Build,
-    List
+    List,
+    Versions {
+        name: String,
+    },
+    Token {
+        #[command(subcommand)]
+        action: TokenAction,
+    },
+}
+
+#[derive(Subcommand, PartialEq)]
+enum TokenAction {
+    Set {
+        token: String,
+    },
+    Check,
+    Remove,
 }
 
 #[tokio::main]
@@ -34,6 +53,44 @@ async fn main() -> anyhow::Result<()> {
 
     if let Commands::Init = cli.command {
         Package::init(file_name)?;
+        return Ok(());
+    }
+
+    if let Commands::Token { .. } = cli.command {
+        match cli.command {
+            Commands::Token { action } => {
+                match action {
+                    TokenAction::Set { token } => {
+                        match Config::create_env_file(&token) {
+                            Ok(_) => println!("GitHub token saved successfully!"),
+                            Err(e) => println!("Error saving token: {}", e),
+                        }
+                    },
+                    TokenAction::Check => {
+                        match Config::load() {
+                            Ok(config) => {
+                                if config.has_token() {
+                                    println!("GitHub token is configured");
+                                    let token = &config.github_token.unwrap();
+                                    println!("Token: ...{}", &token[token.len().saturating_sub(8)..]);
+                                } else {
+                                    println!("No GitHub token found");
+                                    println!("Use 'pkg token set <your_token>' to add one");
+                                }
+                            },
+                            Err(e) => println!("Error loading config: {}", e),
+                        }
+                    },
+                    TokenAction::Remove => {
+                        match std::fs::remove_file(".pkg.env") {
+                            Ok(_) => println!("GitHub token removed successfully!"),
+                            Err(e) => println!("Error removing token: {}", e),
+                        }
+                    },
+                }
+            },
+            _ => unreachable!(),
+        }
         return Ok(());
     }
 
@@ -49,7 +106,7 @@ async fn main() -> anyhow::Result<()> {
     };
 
     match cli.command {
-        Commands::Add { name } => {
+        Commands::Add { name, version } => {
             let mut candidates = pkg.find_dependency(&name).await?;
 
             if candidates.is_empty() {
@@ -65,7 +122,12 @@ async fn main() -> anyhow::Result<()> {
                 .default(0)
                 .interact()?;
 
-            let chosen = candidates.remove(selection);
+            let mut chosen = candidates.remove(selection);
+            
+            if let Some(version_constraint) = version {
+                chosen.version_constraint = Some(version_constraint);
+            }
+            
             pkg.add_dependency(chosen)?;
         }
         Commands::Delete { name } => {
@@ -92,14 +154,42 @@ async fn main() -> anyhow::Result<()> {
             CMake::generate_dependency_bridge(&pkg.dependencies)?;
         }
         Commands::List => {
-            for dep in &pkg.dependencies {
-                println!("{}", dep.name);
+            if pkg.dependencies.is_empty() {
+                println!("No dependencies found.");
+            } else {
+                println!("Dependencies:");
+                for dep in &pkg.dependencies {
+                    let version_info = match &dep.version_constraint {
+                        Some(constraint) => format!(" (version: {})", constraint),
+                        None => " (latest)".to_string(),
+                    };
+                    println!("  {}{}", dep.name, version_info);
+                }
             }
         }
-        // Init is being checked in if statement before match to avoid repetition
-        // Because every other variant needs data stored inside package.yaml
-        // We can load the data before match statement this way
-        Commands::Init => {}
+        Commands::Versions { name } => {
+            println!("Checking available versions for {}...", name);
+            
+            match pkg.get_available_versions(&name).await {
+                Ok(versions) => {
+                    if versions.is_empty() {
+                        println!("No version tags found for {}", name);
+                    } else {
+                        println!("Available versions for {}:", name);
+                        for version in versions {
+                            println!("  {}", version);
+                        }
+                    }
+                },
+                Err(e) => println!("Error getting versions: {}", e),
+            }
+        }
+        Commands::Token { .. } => {
+            unreachable!("Token commands should be handled before this match")
+        }
+        Commands::Init => {
+            unreachable!("Init command should be handled before this match")
+        }
     }
     serialization::save_package(&pkg, file_name)?;
     Ok(())
