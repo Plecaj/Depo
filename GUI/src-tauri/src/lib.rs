@@ -27,6 +27,13 @@ fn add_dependency(path: &str, dep: Dependency) -> Result<(), String> {
 }
 
 #[tauri::command]
+fn add_dependency_with_version(path: &str, name: String, full_name: String, url: String, version: Option<String>) -> Result<(), String> {
+    let mut pkg = serialization::load_package(path).map_err(|e| e.to_string())?;
+    let dep = Dependency::new(&name, &full_name, &url, version);
+    pkg.add_dependency(dep).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 fn delete_dependency(path: &str, name: &str) -> Result<(), String> {
     let mut pkg = serialization::load_package(path).map_err(|e| e.to_string())?;
     pkg.remove_dependency(name).map_err(|e| e.to_string())
@@ -47,8 +54,14 @@ fn build_dependencies(path: &str) -> Result<(), String> {
     for dep in pkg.dependencies.iter_mut() {
         CMake::build_dependency(dep).map_err(|e| e.to_string())?;
     }
-    CMake::generate_dependency_bridge(&pkg.dependencies).map_err(|e| e.to_string())?;;
+    CMake::generate_dependency_bridge(&pkg.dependencies).map_err(|e| e.to_string())?;
     Ok(())
+}
+
+#[tauri::command]
+async fn get_available_versions(path: &str, name: &str) -> Result<Vec<String>, String> {
+    let pkg = serialization::load_package(path).map_err(|e| e.to_string())?;
+    pkg.get_available_versions(name).await.map_err(|e| e.to_string())
 }
 pub fn run() {
     tauri::Builder::default()
@@ -59,9 +72,11 @@ pub fn run() {
             get_project_deps,
             find_dependency,
             add_dependency,
+            add_dependency_with_version,
             delete_dependency,
             install_dependencies,
-            build_dependencies
+            build_dependencies,
+            get_available_versions
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

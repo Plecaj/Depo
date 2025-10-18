@@ -57,11 +57,12 @@ impl Package {
             .unwrap_or(&vec![])
             .iter()
             .filter_map(|repo| {
-                Some(Dependency {
-                    name: repo["name"].as_str()?.to_string(),
-                    full_name: repo["full_name"].as_str()?.to_string(),
-                    url: repo["html_url"].as_str()?.to_string(),
-                })
+                Some(Dependency::new(
+                    repo["name"].as_str()?,
+                    repo["full_name"].as_str()?,
+                    repo["html_url"].as_str()?,
+                    None,
+                ))
             })
             .collect();
 
@@ -86,6 +87,57 @@ impl Package {
         fs::remove_dir_all(format!("deps/{}", name))?;
         CMake::generate_dependency_bridge(&self.dependencies)?;
         Ok(())
+    }
+
+    pub async fn get_available_versions(&self, name: &str) -> anyhow::Result<Vec<String>> {
+        use reqwest::Client;
+        use serde_json::Value;
+
+        let client = Client::new();
+        let api_url = "https://api.github.com/search/repositories";
+        let query = format!("{} language:C++", name);
+        let params = [
+            ("q", query.as_str()),
+            ("sort", "stars"),
+            ("order", "desc"),
+            ("per_page", "1") 
+        ];
+
+        let response = client
+            .get(api_url)
+            .header("User-Agent", "rust-client")
+            .query(&params)
+            .send()
+            .await?;
+
+        let data: Value = response.json().await?;
+        let empty_vec = vec![];
+        let repos = data["items"]
+            .as_array()
+            .unwrap_or(&empty_vec);
+
+        if repos.is_empty() {
+            anyhow::bail!("No repositories found for '{}'", name);
+        }
+
+        let repo = &repos[0];
+        let repo_url = repo["clone_url"].as_str().unwrap_or("");
+        
+        let temp_path = format!("temp_check_{}_{}", name, std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs());
+        
+        let repo_obj = git2::Repository::clone(repo_url, &temp_path)?;
+        let dep = Dependency::new(
+            repo["name"].as_str().unwrap_or(""),
+            repo["full_name"].as_str().unwrap_or(""),
+            repo_url,
+            None,
+        );
+        
+        let versions = dep.get_available_versions(&repo_obj)?;
+        
+        let _ = std::fs::remove_dir_all(&temp_path);
+        
+        Ok(versions)
     }
 
 }
