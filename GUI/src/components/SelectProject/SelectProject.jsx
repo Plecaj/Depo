@@ -6,8 +6,8 @@ import {PackagesData} from "../../App.jsx";
 
 function SelectProject() {
 
-    const {setPath} = useContext(PackagesData);
-    const {fetchData} = useContext(PackagesData);
+    const {setPath, setError} = useContext(PackagesData);
+
 
     async function select(){
         let path = await open({
@@ -23,6 +23,7 @@ function SelectProject() {
             setPath(path);
         }catch(e){
             console.log("somthing went wrong! with selecting project path : " + e);
+            setError(e);
         }
     }
 

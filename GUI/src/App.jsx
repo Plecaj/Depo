@@ -11,6 +11,7 @@ function App() {
 
     const [path, setPath] = useState(null);
     const [packageData, setPackageData] = useState();
+    const[error, setError] = useState(null);
 
     async function fetchData() {
         try{
@@ -28,7 +29,7 @@ function App() {
     },[path])
 
     return(
-        <PackagesData.Provider value={{path , setPath, packageData, setPackageData, fetchData}}>
+        <PackagesData.Provider value={{path , setPath, packageData, setPackageData, fetchData, error, setError}}>
             <div className={styles.app}>
                 <div className={styles.HelpBar}>
                     <HelpBar/>
@@ -44,7 +45,9 @@ function App() {
                     </div>
                 }
                 {path == null &&
-                    <div className={styles.noProject}> no project selected </div>
+                    <div className={styles.noProject}> no project selected <br/>
+                        {error &&  error }
+                    </div>
                 }
 
             </div>
