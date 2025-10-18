@@ -1,5 +1,5 @@
 use clap::{Parser, Subcommand};
-use core::{
+use pkgcore::{
     serialization,
     build::{CMake, BuildSystem},
     package::{Package}
@@ -32,13 +32,7 @@ async fn main() -> anyhow::Result<()> {
     let file_name = "package.yaml";
 
     if let Commands::Init = cli.command {
-        if serialization::package_exists(file_name) {
-            println!("Package file already exists");
-        } else {
-            let pkg = Package::create();
-            serialization::save_package(&pkg, file_name)?;
-            println!("Initialized new package");
-        }
+        Package::init(file_name)?;
         return Ok(());
     }
 

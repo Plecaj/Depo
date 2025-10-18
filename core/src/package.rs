@@ -1,15 +1,27 @@
 use std::fs;
 use serde::{Deserialize, Serialize};
 use crate::dependency::{Dependency};
+use crate::serialization;
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Package {
     pub dependencies: Vec<Dependency>
 }
 impl Package {
 
-    pub fn create() -> Package {
-        Package{
-            dependencies: vec![]
+    pub fn new() -> Package {
+        Package {
+         dependencies: Vec::new()
+        }
+    }
+
+    pub fn init(file: &str) -> anyhow::Result<Package> {
+        if serialization::package_exists(&file) {
+            anyhow::bail!("package already exists");
+        } else {
+            let pkg = Package::new();
+            serialization::save_package(&pkg, &file)?;
+            Ok(pkg)
         }
     }
 
@@ -20,7 +32,7 @@ impl Package {
         return Ok(());
     }
 
-    pub async fn find_dependency(&mut self, name: &str) -> anyhow::Result<Vec<Dependency>> {
+    pub async fn find_dependency(&self, name: &str) -> anyhow::Result<Vec<Dependency>> {
         use reqwest::Client;
         use serde_json::Value;
 
