@@ -4,8 +4,8 @@ use pkgcore::package::Package;
 use pkgcore::serialization;
 
 #[tauri::command]
-fn init(file: &str) -> Result<Package, String> {
-    Package::init(file).map_err(|e| e.to_string())
+fn init(path: &str) -> Result<Package, String> {
+    Package::init(path).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
