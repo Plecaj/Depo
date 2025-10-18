@@ -1,51 +1,36 @@
 use std::fs::File;
-use thiserror::Error;
-use std::{fs, io};
+use std::fs;
 use std::io::Write;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::process::Command;
 use crate::dependency::Dependency;
 
-#[derive(Debug, Error)]
-pub enum BuildError {
-    #[error("Build file not found at {0}")]
-    BuildFileNotFound(PathBuf),
-
-    #[error("Build process failed: {0}")]
-    BuildProcessFailed(String),
-
-    #[error("IO error: {0}")]
-    Io(#[from] io::Error),
-}
 
 pub trait BuildSystem {
-    fn build_dependency(pkg: &Dependency) -> Result<(), BuildError>;
-    fn generate_dependency_bridge(deps: &[Dependency]) -> Result<(), io::Error>;
+    fn build_dependency(pkg: &Dependency) -> anyhow::Result<()>;
+    fn generate_dependency_bridge(deps: &[Dependency]) -> anyhow::Result<()>;
 }
 pub struct CMake;
 impl BuildSystem for CMake {
-    fn build_dependency(dep: &Dependency) -> Result<(), BuildError> {
+    fn build_dependency(dep: &Dependency) -> anyhow::Result<()> {
         let dep_path = Path::new("deps").join(&dep.name);
         let cmake_file = dep_path.join("CMakeLists.txt");
 
         if !cmake_file.exists() {
-            return Err(BuildError::BuildFileNotFound(dep_path.to_path_buf()));
+            anyhow::bail!("Build file not found for {}, path: {}", dep.name, dep_path.display());
         }
 
         let build_dir = dep_path.join("build");
         fs::create_dir_all(&build_dir)?;
 
         let status = Command::new("cmake")
-            .arg("..") // source directory
+            .arg("..") 
             .current_dir(&build_dir)
             .status()
-            .map_err(|e| BuildError::BuildProcessFailed(e.to_string()))?;
+            .map_err(|e| anyhow::anyhow!("Failed to run CMake for {}: {}", dep.name, e))?;
 
         if !status.success() {
-            return Err(BuildError::BuildProcessFailed(format!(
-                "CMake configure failed for {}",
-                dep.name
-            )));
+            anyhow::bail!("CMake configure failed for {}", dep.name);
         }
 
         let status = Command::new("cmake")
@@ -53,18 +38,15 @@ impl BuildSystem for CMake {
             .arg(".")
             .current_dir(&build_dir)
             .status()
-            .map_err(|e| BuildError::BuildProcessFailed(e.to_string()))?;
+            .map_err(|e| anyhow::anyhow!("Failed to run CMake for {}: {}", dep.name, e))?;
 
         if !status.success() {
-            return Err(BuildError::BuildProcessFailed(format!(
-                "CMake build failed for {}",
-                dep.name
-            )));
+            anyhow::bail!("CMake build failed for {}", dep.name);
         }
         Ok(())
     }
 
-    fn generate_dependency_bridge(deps: &[Dependency]) -> Result<(), io::Error>{
+    fn generate_dependency_bridge(deps: &[Dependency]) -> anyhow::Result<()>{
         let mut include_file = File::create("deps/CMakeIncludes.cmake")?;
         let mut links_file = File::create("deps/CMakeLinks.cmake")?;
 

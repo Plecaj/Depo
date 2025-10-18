@@ -1,7 +1,6 @@
 use std::path::Path;
 use git2::Repository;
 use serde::{Serialize, Deserialize};
-use thiserror::Error;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Dependency{
@@ -9,30 +8,22 @@ pub struct Dependency{
     pub url: String,
 }
 
-#[derive(Debug, Error)]
-pub enum DependencyError {
-    #[error("Git error: {0}")]
-    Git(#[from] git2::Error),
-
-    #[error("Dependency already exists at path: {0}")]
-    AlreadyExists(String),
-}
 
 impl Dependency{
-    pub fn create(name: &str, url: &str) -> Result<Dependency, DependencyError> {
+    pub fn create(name: &str, url: &str) -> anyhow::Result<Dependency> {
         let dep = Dependency{name: name.to_string(), url: url.to_string()};
         let install_path = format!("deps/{}", name);
         let path = Path::new(&install_path);
 
         if path.exists() {
-            return Err(DependencyError::AlreadyExists(install_path));
+            anyhow::bail!("{} already exists", install_path);
         }
 
         Repository::clone(&url, &path)?;
         Ok(dep)
     }
 
-    pub fn install(&self) -> Result<(), DependencyError> {
+    pub fn install(&self) -> anyhow::Result<()> {
         let install_path = format!("deps/{}", self.name);
         let path = Path::new(&install_path);
 

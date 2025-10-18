@@ -1,14 +1,15 @@
-use crate::package::{Package, PackageError};
+use crate::package::{Package};
 use std::fs;
 use std::path::Path;
+use anyhow::bail;
 
 pub fn package_exists(path: &str) -> bool {
     Path::new(path).exists()
 }
 
-pub fn load_package(path: &str) -> Result<Package, PackageError> {
+pub fn load_package(path: &str) -> anyhow::Result<Package> {
     if !package_exists(path) {
-        return Err(PackageError::PackageNotFound);
+        bail!("Package file not found at path: {}", path);
     }
 
     let content = fs::read_to_string(path)?;
@@ -16,7 +17,7 @@ pub fn load_package(path: &str) -> Result<Package, PackageError> {
     Ok(package)
 }
 
-pub fn save_package(package: &Package, path: &str) -> Result<(), PackageError> {
+pub fn save_package(package: &Package, path: &str) -> anyhow::Result<()> {
     let yaml_str = serde_yaml::to_string(package)?;
     fs::write(path, yaml_str)?;
     Ok(())

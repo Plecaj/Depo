@@ -2,7 +2,7 @@ use clap::{Parser, Subcommand};
 use core::{
     serialization,
     build::{CMake, BuildSystem},
-    package::{Package, PackageError}
+    package::{Package}
 };
 
 #[derive(Parser)]
@@ -18,7 +18,6 @@ enum Commands {
     Init,
     Add {
         name: String,
-        url: String,
     },
     Delete {
         name: String
@@ -27,7 +26,8 @@ enum Commands {
     Build,
 }
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
     let file_name = "package.yaml";
 
@@ -44,19 +44,21 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut pkg = match serialization::load_package(file_name) {
         Ok(pkg) => pkg,
-        Err(PackageError::PackageNotFound) => {
-            println!("Package file not found. Use the `init` command to create one.");
-            return Ok(());
+        Err(e) => {
+            if e.to_string().contains("Package file not found") {
+                println!("Package file not found. Use the `init` command to create one.");
+                return Ok(());
+            }
+            return Err(e.into());
         }
-        Err(e) => return Err(Box::new(e)),
     };
 
     match cli.command {
-        Commands::Add { name, url } => {
-            match pkg.add_dependency(&name, &url) {
-                Ok(true) => println!("Added dependency: {} -> {}", name, url),
-                Ok(false) => println!("Dependency '{}' already exists", name),
-                Err(e) => eprintln!("Failed to add dependency '{}': {}", name, e),
+        Commands::Add { name } => {
+            let candidates = pkg.find_dependency(&name).await?;
+            for candidate in candidates {
+                let name = candidate.name.clone();
+                println!("{name}");
             }
         }
         Commands::Delete { name } => {
