@@ -6,15 +6,17 @@ import { invoke } from "@tauri-apps/api/core";
 
 function List() {
 
-    const {packageData, path} = useContext(PackagesData);
+    const {packageData, path, fetchData} = useContext(PackagesData);
 
     async function deleteDep(name){
         try{
             await invoke('delete_dependency', {path: path, name: name});
             console.log("deleted dependency " + name);
+            fetchData();
         }catch(e){
             console.log(" problem with deleting  dependency " + name + " : " + e);
         }
+
     }
 
 

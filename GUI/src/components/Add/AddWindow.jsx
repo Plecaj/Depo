@@ -58,8 +58,10 @@ function AddWindow({isVisible, setIsVisible}) {
                             <button className={styles.closeButton} onClick={() => setIsVisible(false)}>X</button>
                         </div>
 
-                        <input type="text" value={input} onChange={HandleInputChange} ></input>
-                        <button onClick={search} > search </button>
+                        <div className={styles.row}>
+                            <input type="text" value={input} onChange={HandleInputChange} ></input>
+                            <button onClick={search} className={styles.searchButton}> search </button>
+                        </div>
 
                         <select value={selectedDep} onChange={handleSelectChange}>
 
@@ -71,10 +73,10 @@ function AddWindow({isVisible, setIsVisible}) {
                             )}
 
                         </select>
-
-                        <input type="text" value={version} onChange={handleVersionChange} ></input>
-
-                        <button onClick={addDependency} > add </button>
+                        <div className={styles.row}>
+                            <input type="text" value={version} onChange={handleVersionChange} ></input>
+                            <button onClick={addDependency} className={styles.searchButton} > add </button>
+                        </div>
                     </div>
                 </div>
             }
