@@ -6,9 +6,7 @@ import { invoke } from "@tauri-apps/api/core";
 
 function List() {
 
-    const {setPackageData} = useContext(PackagesData);
     const {packageData} = useContext(PackagesData);
-    const {path} = useContext(PackagesData);
 
     return(
         <div className={styles.list}>

@@ -1,7 +1,7 @@
 import List from './components/List/List.jsx'
 import ManagerBar from './components/ManagerBar/ManagerBar.jsx'
 import styles from './App.module.css'
-import {createContext, useState} from "react";
+import {createContext, useEffect, useState} from "react";
 import HelpBar from "./components/HelpBar/HelpBar.jsx";
 import { invoke } from "@tauri-apps/api/core";
 
@@ -14,13 +14,18 @@ function App() {
 
     async function fetchData() {
         try{
-            const data = await invoke('get_project_deps' , {path : path} )
-            setPackageData(data)
+            const data = await invoke('get_project_deps' , {path: path} )
+            setPackageData(data);
             console.log("data fechted");
         }catch(e){
             console.log("filed to fetch data : "  + e);
         }
     }
+    useEffect(() => {
+        if(path){
+            fetchData();
+        }
+    },[path])
 
     return(
         <PackagesData.Provider value={{path , setPath, packageData, setPackageData, fetchData}}>

@@ -1,15 +1,16 @@
-import styles from'./SelectProject.module.css';
+import styles from'./Init.module.css';
 import { open } from "@tauri-apps/plugin-dialog";
 import { invoke } from "@tauri-apps/api/core";
 import {useContext} from "react";
 import {PackagesData} from "../../App.jsx";
 
-function SelectProject() {
+function Init() {
 
     const {setPath} = useContext(PackagesData);
     const {fetchData} = useContext(PackagesData);
 
-    async function select(){
+    async function Init(){
+
         let path = await open({
             multiple: false,
             directory: true,
@@ -19,20 +20,21 @@ function SelectProject() {
         path = path + "\\package.yaml";
 
         try{
-            await invoke('get_project_deps', {path: path});
-            console.log("selected project :" + path);
+            await invoke('init', {file: path});
+            console.log("init  project :" + path);
             setPath(path);
         }catch(e){
-            console.log("somthing went wrong! with selecting project path : " + e);
+            console.log("somthing went wrong! with init project : " + e);
         }
+
     }
 
     return(
         <>
-            <div className={styles.button} onClick={select} > Select Project </div>
+            <div className={styles.button} onClick={Init} > init </div>
         </>
     );
 }
 
-export default SelectProject;
+export default Init;
 
