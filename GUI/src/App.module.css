@@ -35,6 +35,15 @@ html, body, #root {
 .HelpBar:hover{
     flex: 1;
 }
+.noProject{
+    flex:12;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 10vw;
+    background-color: var(--primary);
+    color: white;
+}
 *{
     box-sizing: border-box;
 }

@@ -1,30 +1,51 @@
 import List from './components/List/List.jsx'
 import ManagerBar from './components/ManagerBar/ManagerBar.jsx'
 import styles from './App.module.css'
-import data from './exampleData.json'
-import {createContext, useState} from "react";
+import {createContext, useEffect, useState} from "react";
 import HelpBar from "./components/HelpBar/HelpBar.jsx";
+import { invoke } from "@tauri-apps/api/core";
 
 export const PackagesData = createContext(null);
 
 function App() {
 
-    const [packages, setPackages] = useState(data);
+    const [path, setPath] = useState(null);
+    const [packageData, setPackageData] = useState();
+
+    async function fetchData() {
+        try{
+            const data = await invoke('get_project_deps' , {path: path} )
+            setPackageData(data);
+            console.log("data fechted");
+        }catch(e){
+            console.log("filed to fetch data : "  + e);
+        }
+    }
+    useEffect(() => {
+        if(path){
+            fetchData();
+        }
+    },[path])
 
     return(
-        <PackagesData.Provider value={[packages, setPackages]}>
+        <PackagesData.Provider value={{path , setPath, packageData, setPackageData, fetchData}}>
             <div className={styles.app}>
                 <div className={styles.HelpBar}>
                     <HelpBar/>
                 </div>
-                <div className={styles.column}>
-                    <div className={styles.Bar}>
-                        <ManagerBar/>
+                {path != null &&
+                    <div className={styles.column}>
+                        <div className={styles.Bar}>
+                            <ManagerBar/>
+                        </div>
+                        <div className={styles.List}>
+                            <List/>
+                        </div>
                     </div>
-                    <div className={styles.List}>
-                        <List/>
-                    </div>
-                </div>
+                }
+                {path == null &&
+                    <div className={styles.noProject}> no project selected </div>
+                }
 
             </div>
         </PackagesData.Provider>
