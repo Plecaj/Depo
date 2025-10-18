@@ -23,20 +23,17 @@ async fn find_dependency(path: &str, name: &str) -> Result<Vec<Dependency>, Stri
 #[tauri::command]
 fn add_dependency(path: &str, dep: Dependency) -> Result<(), String> {
     let mut pkg = serialization::load_package(path).map_err(|e| e.to_string())?;
-    pkg.add_dependency(dep).map_err(|e| e.to_string())
-}
-
-#[tauri::command]
-fn add_dependency_with_version(path: &str, name: String, full_name: String, url: String, version: Option<String>) -> Result<(), String> {
-    let mut pkg = serialization::load_package(path).map_err(|e| e.to_string())?;
-    let dep = Dependency::new(&name, &full_name, &url, version);
-    pkg.add_dependency(dep).map_err(|e| e.to_string())
+    pkg.add_dependency(dep).map_err(|e| e.to_string())?;
+    serialization::save_package(&pkg, &path).map_err(|e| e.to_string())?;
+    Ok(())
 }
 
 #[tauri::command]
 fn delete_dependency(path: &str, name: &str) -> Result<(), String> {
     let mut pkg = serialization::load_package(path).map_err(|e| e.to_string())?;
-    pkg.remove_dependency(name).map_err(|e| e.to_string())
+    pkg.remove_dependency(name).map_err(|e| e.to_string())?;
+    serialization::save_package(&pkg, &path).map_err(|e| e.to_string())?;
+    Ok(())
 }
 
 #[tauri::command]
@@ -72,7 +69,6 @@ pub fn run() {
             get_project_deps,
             find_dependency,
             add_dependency,
-            add_dependency_with_version,
             delete_dependency,
             install_dependencies,
             build_dependencies,
