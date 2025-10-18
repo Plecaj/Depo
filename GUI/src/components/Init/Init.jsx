@@ -17,7 +17,6 @@ function Init() {
         });
 
         if(!path){return}
-        path = path + "\\package.yaml";
 
         try{
             await invoke('init', {file: path});
