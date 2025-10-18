@@ -18,12 +18,12 @@ impl Package {
         }
     }
 
-    pub fn init(file: &str) -> anyhow::Result<Package> {
-        if serialization::package_exists(&file) {
+    pub fn init(path: &str) -> anyhow::Result<Package> {
+        if serialization::package_exists(&path) {
             anyhow::bail!("package already exists");
         } else {
             let pkg = Package::new();
-            serialization::save_package(&pkg, &file)?;
+            serialization::save_package(&pkg, &path)?;
             Ok(pkg)
         }
     }
