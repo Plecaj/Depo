@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 use crate::build::{BuildSystem, CMake};
 use crate::dependency::{Dependency};
 use crate::serialization;
+use crate::config::Config;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Package {
@@ -34,6 +35,7 @@ impl Package {
         use reqwest::Client;
         use serde_json::Value;
 
+        let config = Config::load()?;
         let client = Client::new();
         let api_url = "https://api.github.com/search/repositories";
         let query = format!("{} language:C++", name);
@@ -44,12 +46,24 @@ impl Package {
             ("per_page", "5")
         ];
 
-        let response = client
+        let mut request = client
             .get(api_url)
             .header("User-Agent", "rust-client")
-            .query(&params)
-            .send()
-            .await?;
+            .query(&params);
+
+        if let Some(auth_header) = config.get_auth_header() {
+            request = request.header("Authorization", auth_header);
+        }
+
+        let response = request.send().await?;
+
+        if response.status() == 403 {
+            let error_text = response.text().await?;
+            if error_text.contains("rate limit") {
+                anyhow::bail!("GitHub API rate limit exceeded. Please add a GitHub token to .pkg.env file");
+            }
+            anyhow::bail!("GitHub API error: {}", error_text);
+        }
 
         let data: Value = response.json().await?;
         let repos: Vec<Dependency> = data["items"]
@@ -93,6 +107,7 @@ impl Package {
         use reqwest::Client;
         use serde_json::Value;
 
+        let config = Config::load()?;
         let client = Client::new();
         let api_url = "https://api.github.com/search/repositories";
         let query = format!("{} language:C++", name);
@@ -103,12 +118,24 @@ impl Package {
             ("per_page", "1") 
         ];
 
-        let response = client
+        let mut request = client
             .get(api_url)
             .header("User-Agent", "rust-client")
-            .query(&params)
-            .send()
-            .await?;
+            .query(&params);
+
+        if let Some(auth_header) = config.get_auth_header() {
+            request = request.header("Authorization", auth_header);
+        }
+
+        let response = request.send().await?;
+
+        if response.status() == 403 {
+            let error_text = response.text().await?;
+            if error_text.contains("rate limit") {
+                anyhow::bail!("GitHub API rate limit exceeded. Please add a GitHub token to .pkg.env file");
+            }
+            anyhow::bail!("GitHub API error: {}", error_text);
+        }
 
         let data: Value = response.json().await?;
         let empty_vec = vec![];

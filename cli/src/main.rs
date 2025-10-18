@@ -2,7 +2,8 @@ use clap::{Parser, Subcommand};
 use pkgcore::{
     serialization,
     build::{CMake, BuildSystem},
-    package::{Package}
+    package::{Package},
+    config::Config,
 };
 
 #[derive(Parser)]
@@ -30,6 +31,19 @@ enum Commands {
     Versions {
         name: String,
     },
+    Token {
+        #[command(subcommand)]
+        action: TokenAction,
+    },
+}
+
+#[derive(Subcommand, PartialEq)]
+enum TokenAction {
+    Set {
+        token: String,
+    },
+    Check,
+    Remove,
 }
 
 #[tokio::main]
@@ -39,6 +53,44 @@ async fn main() -> anyhow::Result<()> {
 
     if let Commands::Init = cli.command {
         Package::init(file_name)?;
+        return Ok(());
+    }
+
+    if let Commands::Token { .. } = cli.command {
+        match cli.command {
+            Commands::Token { action } => {
+                match action {
+                    TokenAction::Set { token } => {
+                        match Config::create_env_file(&token) {
+                            Ok(_) => println!("GitHub token saved successfully!"),
+                            Err(e) => println!("Error saving token: {}", e),
+                        }
+                    },
+                    TokenAction::Check => {
+                        match Config::load() {
+                            Ok(config) => {
+                                if config.has_token() {
+                                    println!("GitHub token is configured");
+                                    let token = &config.github_token.unwrap();
+                                    println!("Token: ...{}", &token[token.len().saturating_sub(8)..]);
+                                } else {
+                                    println!("No GitHub token found");
+                                    println!("Use 'pkg token set <your_token>' to add one");
+                                }
+                            },
+                            Err(e) => println!("Error loading config: {}", e),
+                        }
+                    },
+                    TokenAction::Remove => {
+                        match std::fs::remove_file(".pkg.env") {
+                            Ok(_) => println!("GitHub token removed successfully!"),
+                            Err(e) => println!("Error removing token: {}", e),
+                        }
+                    },
+                }
+            },
+            _ => unreachable!(),
+        }
         return Ok(());
     }
 
@@ -132,10 +184,12 @@ async fn main() -> anyhow::Result<()> {
                 Err(e) => println!("Error getting versions: {}", e),
             }
         }
-        // Init is being checked in if statement before match to avoid repetition
-        // Because every other variant needs data stored inside package.yaml
-        // We can load the data before match statement this way
-        Commands::Init => {}
+        Commands::Token { .. } => {
+            unreachable!("Token commands should be handled before this match")
+        }
+        Commands::Init => {
+            unreachable!("Init command should be handled before this match")
+        }
     }
     serialization::save_package(&pkg, file_name)?;
     Ok(())
