@@ -36,7 +36,7 @@ impl Dependency{
     }
 
     pub fn install(&self, working_dir: &str) -> anyhow::Result<()> {
-        let install_path = format!("{}/deps/{}", working_dir, self.name);
+        let install_path = Path::new(&working_dir).join("deps").join(&self.full_name);
         let path = Path::new(&install_path);
 
         if path.exists() {

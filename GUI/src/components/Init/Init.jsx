@@ -1,13 +1,12 @@
 import styles from'./Init.module.css';
 import { open } from "@tauri-apps/plugin-dialog";
 import { invoke } from "@tauri-apps/api/core";
-import {useContext} from "react";
+import {useContext, useState} from "react";
 import {PackagesData} from "../../App.jsx";
 
 function Init() {
 
-    const {setPath} = useContext(PackagesData);
-    const {fetchData} = useContext(PackagesData);
+    const {setPath, setError} = useContext(PackagesData);
 
     async function Init(){
 
@@ -17,14 +16,14 @@ function Init() {
         });
 
         if(!path){return}
-        path = path + "\\package.yaml";
 
         try{
-            await invoke('init', {file: path});
+            await invoke('init', {path: path});
             console.log("init  project :" + path);
             setPath(path);
         }catch(e){
             console.log("somthing went wrong! with init project : " + e);
+            setError(e);
         }
 
     }

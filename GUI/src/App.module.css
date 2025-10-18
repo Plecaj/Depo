@@ -40,7 +40,8 @@ html, body, #root {
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 10vw;
+    text-align: center;
+    font-size: 5vw;
     background-color: var(--primary);
     color: white;
 }

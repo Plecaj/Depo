@@ -7,8 +7,8 @@ pub fn package_exists(path: &str) -> bool {
     Path::new(path).join("package.yaml").exists()
 }
 pub fn load_package(path: &str) -> anyhow::Result<Package> {
-    let file = path.to_owned() + "/package.json";
-    if !package_exists(file.as_str()) {
+    let file = Path::new(path).join("package.yaml");
+    if !package_exists(path) {
         bail!("Package file not found at path: {}", path);
     }
 
@@ -18,7 +18,7 @@ pub fn load_package(path: &str) -> anyhow::Result<Package> {
 }
 
 pub fn save_package(package: &Package, path: &str) -> anyhow::Result<()> {
-    let file = path.to_owned() + "/package.json";
+    let file = Path::new(path).join("package.yaml");
     let yaml_str = serde_yaml::to_string(package)?;
     fs::write(file, yaml_str)?;
     Ok(())
