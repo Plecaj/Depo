@@ -1,4 +1,5 @@
 use std::fs;
+use std::path::Path;
 use serde::{Deserialize, Serialize};
 use crate::build::{BuildSystem, CMake};
 use crate::dependency::{Dependency};
@@ -83,23 +84,28 @@ impl Package {
         Ok(repos)
     }
 
-    pub fn add_dependency(&mut self, dep: Dependency) -> anyhow::Result<()> {
+    pub fn add_dependency(&mut self, dep: Dependency, working_dir: &str) -> anyhow::Result<()> {
         if self.is_dependency_existing(dep.name.as_str()) {
             anyhow::bail!("package already exists");
         }
 
-        dep.install()?;
+        dep.install(&working_dir)?;
         self.dependencies.push(dep);
         Ok(())
     }
 
-    pub fn remove_dependency(&mut self, name: &str) -> anyhow::Result<()> {
+    pub fn remove_dependency(&mut self, name: &str, working_dir: &str) -> anyhow::Result<()> {
         if !self.is_dependency_existing(name) {
             anyhow::bail!("package doesnt exist");
         }
         self.dependencies.retain(|d| d.name != name);
-        fs::remove_dir_all(format!("deps/{}", name))?;
-        CMake::generate_dependency_bridge(&self.dependencies)?;
+
+        let dep_path = Path::new(working_dir).join("deps").join(name);
+        if dep_path.exists() {
+            fs::remove_dir_all(&dep_path)?;
+        }
+
+        CMake::generate_dependency_bridge(&self.dependencies, &working_dir)?;
         Ok(())
     }
 
@@ -150,7 +156,7 @@ impl Package {
         let repo = &repos[0];
         let repo_url = repo["clone_url"].as_str().unwrap_or("");
         
-        let temp_path = format!("temp_check_{}_{}", name, std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs());
+        let temp_path = format!("temp_check_{}_{}", name, std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH)?.as_secs());
         
         let repo_obj = git2::Repository::clone(repo_url, &temp_path)?;
         let dep = Dependency::new(
@@ -162,7 +168,7 @@ impl Package {
         
         let versions = dep.get_available_versions(&repo_obj)?;
         
-        let _ = std::fs::remove_dir_all(&temp_path);
+        let _ = fs::remove_dir_all(&temp_path);
         
         Ok(versions)
     }
