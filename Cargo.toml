@@ -1,0 +1,8 @@
+[workspace]
+members = [
+    "core",
+    "cli",
+]
+exclude = [
+    "GUI/src-tauri",
+]
