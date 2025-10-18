@@ -24,6 +24,7 @@ enum Commands {
     },
     Install,
     Build,
+    List
 }
 
 #[tokio::main]
@@ -56,7 +57,7 @@ async fn main() -> anyhow::Result<()> {
                 return Ok(());
             }
 
-            let options: Vec<String> = candidates.iter().map(|c| c.name.clone()).collect();
+            let options: Vec<String> = candidates.iter().map(|c| c.full_name.clone()).collect();
 
             let selection = dialoguer::Select::new()
                 .with_prompt("Select a dependency")
@@ -89,6 +90,11 @@ async fn main() -> anyhow::Result<()> {
                 }
             }
             CMake::generate_dependency_bridge(&pkg.dependencies)?;
+        }
+        Commands::List => {
+            for dep in &pkg.dependencies {
+                println!("{}", dep.name);
+            }
         }
         // Init is being checked in if statement before match to avoid repetition
         // Because every other variant needs data stored inside package.yaml
