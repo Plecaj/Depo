@@ -1,5 +1,6 @@
 use std::fs;
 use serde::{Deserialize, Serialize};
+use crate::build::{BuildSystem, CMake};
 use crate::dependency::{Dependency};
 use crate::serialization;
 
@@ -25,18 +26,13 @@ impl Package {
         }
     }
 
-    pub fn is_dependency_existing(&self, name: &str) -> anyhow::Result<()> {
-        if self.dependencies.iter().any(|d| d.name == name) {
-            anyhow::bail!("Dependency already exists: {}", name);
-        }
-        return Ok(());
+    pub fn is_dependency_existing(&self, name: &str) -> bool {
+        self.dependencies.iter().any(|d| d.name == name)
     }
 
     pub async fn find_dependency(&self, name: &str) -> anyhow::Result<Vec<Dependency>> {
         use reqwest::Client;
         use serde_json::Value;
-
-        self.is_dependency_existing(name)?;
 
         let client = Client::new();
         let api_url = "https://api.github.com/search/repositories";
@@ -62,7 +58,8 @@ impl Package {
             .iter()
             .filter_map(|repo| {
                 Some(Dependency {
-                    name: repo["full_name"].as_str()?.to_string(),
+                    name: repo["name"].as_str()?.to_string(),
+                    full_name: repo["full_name"].as_str()?.to_string(),
                     url: repo["html_url"].as_str()?.to_string(),
                 })
             })
@@ -72,16 +69,22 @@ impl Package {
     }
 
     pub fn add_dependency(&mut self, dep: Dependency) -> anyhow::Result<()> {
-        self.is_dependency_existing(dep.name.as_str())?;
+        if self.is_dependency_existing(dep.name.as_str()) {
+            anyhow::bail!("package already exists");
+        }
+
         dep.install()?;
         self.dependencies.push(dep);
         Ok(())
     }
 
     pub fn remove_dependency(&mut self, name: &str) -> anyhow::Result<()> {
-        self.is_dependency_existing(name)?;
+        if !self.is_dependency_existing(name) {
+            anyhow::bail!("package doesnt exist");
+        }
         self.dependencies.retain(|d| d.name != name);
         fs::remove_dir_all(format!("deps/{}", name))?;
+        CMake::generate_dependency_bridge(&self.dependencies)?;
         Ok(())
     }
 
