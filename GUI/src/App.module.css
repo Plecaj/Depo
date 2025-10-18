@@ -2,6 +2,12 @@ html, body, #root {
     margin: 0;
     padding: 0;
 }
+:root{
+    --primary: rgb(23, 16, 16);
+    --secondary:rgb(33, 24, 24);
+    --third:rgb(46, 37, 37);
+    --accent: rgb(54, 34, 34);
+}
 .app{
     display: flex;
     flex-direction: row;

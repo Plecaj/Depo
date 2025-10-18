@@ -5,10 +5,15 @@
     align-items: center;
     display: flex;
 
-    background-color: rgb(33, 33, 33);
+    background-color: var(--secondary);
     color: white;
 
-    border: 1px solid  rgb(48, 48, 48);
+    border: 1px solid var(--third);
     border-radius: 10px;
     margin: 5px;
+}
+.button:hover{
+    background-color: var(--accent);
+    border: 1px solid var(--accent);
+    filter: drop-shadow(0 0 10px var(--accent));
 }
