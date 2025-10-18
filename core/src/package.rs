@@ -28,7 +28,13 @@ impl Package {
 
         let client = Client::new();
         let api_url = "https://api.github.com/search/repositories";
-        let params = [("q", name), ("sort", "stars"), ("order", "desc"), ("per_page", "5")];
+        let query = format!("{} language:C++", name);
+        let params = [
+            ("q", query.as_str()),
+            ("sort", "stars"),
+            ("order", "desc"),
+            ("per_page", "5")
+        ];
 
         let response = client
             .get(api_url)
@@ -55,6 +61,7 @@ impl Package {
 
     pub fn add_dependency(&mut self, dep: Dependency) -> anyhow::Result<()> {
         self.is_dependency_existing(dep.name.as_str())?;
+        dep.install()?;
         self.dependencies.push(dep);
         Ok(())
     }

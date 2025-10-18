@@ -55,18 +55,30 @@ async fn main() -> anyhow::Result<()> {
 
     match cli.command {
         Commands::Add { name } => {
-            let candidates = pkg.find_dependency(&name).await?;
-            for candidate in candidates {
-                let name = candidate.name.clone();
-                println!("{name}");
+            let mut candidates = pkg.find_dependency(&name).await?;
+
+            if candidates.is_empty() {
+                println!("No dependencies found for '{}'", name);
+                return Ok(());
             }
+
+            let options: Vec<String> = candidates.iter().map(|c| c.name.clone()).collect();
+
+            let selection = dialoguer::Select::new()
+                .with_prompt("Select a dependency")
+                .items(&options)
+                .default(0)
+                .interact()?;
+
+            let chosen = candidates.remove(selection);
+            pkg.add_dependency(chosen)?;
         }
         Commands::Delete { name } => {
             match pkg.remove_dependency(&name) {
                 Ok(()) => println!("Deleted dependency: {}", name),
                 Err(e) => eprintln!("Failed to delete dependency '{}': {}", name, e),
             }
-        }
+         }
         Commands::Install => {
             for dep in &pkg.dependencies {
                 match dep.install() {
