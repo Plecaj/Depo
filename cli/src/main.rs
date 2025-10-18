@@ -1,3 +1,4 @@
+use std::env;
 use clap::{Parser, Subcommand};
 use pkgcore::{
     serialization,
@@ -104,7 +105,7 @@ async fn main() -> anyhow::Result<()> {
             return Err(e.into());
         }
     };
-
+    let working_dir = env::current_dir()?;
     match cli.command {
         Commands::Add { name, version } => {
             let mut candidates = pkg.find_dependency(&name).await?;
@@ -128,17 +129,17 @@ async fn main() -> anyhow::Result<()> {
                 chosen.version_constraint = Some(version_constraint);
             }
             
-            pkg.add_dependency(chosen)?;
+            pkg.add_dependency(chosen, &working_dir.to_str().unwrap())?;
         }
         Commands::Delete { name } => {
-            match pkg.remove_dependency(&name) {
+            match pkg.remove_dependency(&name, &working_dir.to_str().unwrap()) {
                 Ok(()) => println!("Deleted dependency: {}", name),
                 Err(e) => eprintln!("Failed to delete dependency '{}': {}", name, e),
             }
          }
         Commands::Install => {
             for dep in &pkg.dependencies {
-                match dep.install() {
+                match dep.install(&working_dir.to_str().unwrap()) {
                     Ok(_) => println!("Installed dependency '{}'", dep.name),
                     Err(e) => eprintln!("Failed to install dependency '{}': {}", dep.name, e),
                 }
@@ -146,12 +147,12 @@ async fn main() -> anyhow::Result<()> {
         }
         Commands::Build => {
             for dep in &pkg.dependencies {
-                match CMake::build_dependency(dep) {
+                match CMake::build_dependency(dep, &working_dir.to_str().unwrap()) {
                     Ok(_) => println!("Built dependency '{}'", dep.name),
                     Err(e) => eprintln!("Failed to build dependency '{}': {}", dep.name, e),
                 }
             }
-            CMake::generate_dependency_bridge(&pkg.dependencies)?;
+            CMake::generate_dependency_bridge(&pkg.dependencies, &working_dir.to_str().unwrap())?;
         }
         Commands::List => {
             if pkg.dependencies.is_empty() {

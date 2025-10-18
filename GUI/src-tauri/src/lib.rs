@@ -23,7 +23,7 @@ async fn find_dependency(path: &str, name: &str) -> Result<Vec<Dependency>, Stri
 #[tauri::command]
 fn add_dependency(path: &str, dep: Dependency) -> Result<(), String> {
     let mut pkg = serialization::load_package(path).map_err(|e| e.to_string())?;
-    pkg.add_dependency(dep).map_err(|e| e.to_string())?;
+    pkg.add_dependency(dep, &path).map_err(|e| e.to_string())?;
     serialization::save_package(&pkg, &path).map_err(|e| e.to_string())?;
     Ok(())
 }
@@ -31,7 +31,7 @@ fn add_dependency(path: &str, dep: Dependency) -> Result<(), String> {
 #[tauri::command]
 fn delete_dependency(path: &str, name: &str) -> Result<(), String> {
     let mut pkg = serialization::load_package(path).map_err(|e| e.to_string())?;
-    pkg.remove_dependency(name).map_err(|e| e.to_string())?;
+    pkg.remove_dependency(name, &path).map_err(|e| e.to_string())?;
     serialization::save_package(&pkg, &path).map_err(|e| e.to_string())?;
     Ok(())
 }
@@ -40,7 +40,7 @@ fn delete_dependency(path: &str, name: &str) -> Result<(), String> {
 fn install_dependencies(path: &str) -> Result<(), String> {
     let mut pkg = serialization::load_package(path).map_err(|e| e.to_string())?;
     for dep in pkg.dependencies.iter_mut() {
-        dep.install().map_err(|e| e.to_string())?;
+        dep.install(&path).map_err(|e| e.to_string())?;
     }
     Ok(())
 }
@@ -49,9 +49,9 @@ fn install_dependencies(path: &str) -> Result<(), String> {
 fn build_dependencies(path: &str) -> Result<(), String> {
     let mut pkg = serialization::load_package(path).map_err(|e| e.to_string())?;
     for dep in pkg.dependencies.iter_mut() {
-        CMake::build_dependency(dep).map_err(|e| e.to_string())?;
+        CMake::build_dependency(dep, &path).map_err(|e| e.to_string())?;
     }
-    CMake::generate_dependency_bridge(&pkg.dependencies).map_err(|e| e.to_string())?;
+    CMake::generate_dependency_bridge(&pkg.dependencies, &path).map_err(|e| e.to_string())?;
     Ok(())
 }
 
