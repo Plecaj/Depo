@@ -16,7 +16,6 @@ function SelectProject() {
         });
 
         if(!path){return}
-        path = path + "\\package.yaml";
 
         try{
             await invoke('get_project_deps', {path: path});
