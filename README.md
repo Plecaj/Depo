@@ -31,7 +31,7 @@ A simple C++ package manager that helps you manage dependencies for your C++ pro
 1. **Clone the repository:**
    ```bash
    git clone <repository-url>
-   cd pkg
+   cd Depo
    ```
 
 2. **Build the CLI:**
@@ -43,6 +43,49 @@ A simple C++ package manager that helps you manage dependencies for your C++ pro
    ```bash
    cargo install --path cli
    ```
+
+## GUI Usage
+
+The GUI provides a user-friendly interface for managing C++ packages with the same functionality as the CLI.
+
+### Running the GUI
+
+#### Development Mode
+```bash
+cd GUI
+npm install
+npm run tauri dev
+```
+The application will open automatically
+
+#### Production Build
+```bash
+cd GUI
+npm install
+npm run tauri build
+```
+
+The built application will be available in `GUI/src-tauri/target/release/`.
+
+### GUI Features
+
+- **Project Selection** - Choose your C++ project directory
+- **Dependency Management** - Add, remove, and update dependencies through a visual interface
+- **Build Management** - Install and build dependencies with one click
+- **Settings** - Configure GitHub tokens and other settings
+- **Real-time Updates** - See dependency changes immediately
+
+### GUI Workflow
+
+1. **Launch the application** using the development or production build
+2. **Select a project** by choosing a directory containing a package file
+3. **Manage dependencies** using the intuitive interface:
+   - Add new dependencies by searching GitHub repositories
+   - Remove unwanted dependencies
+   - Update existing dependencies
+   - Modify version constraints
+4. **Build your project** with the integrated build tools
+
 
 ## CLI Usage
 
@@ -125,46 +168,6 @@ depo_cli token check
 # Remove token
 depo_cli token remove
 ```
-## GUI Usage
-
-The GUI provides a user-friendly interface for managing C++ packages with the same functionality as the CLI.
-
-### Running the GUI
-
-#### Development Mode
-```bash
-cd GUI
-npm install
-npm run tauri dev
-```
-
-#### Production Build
-```bash
-cd GUI
-npm install
-npm run tauri build
-```
-
-The built application will be available in `GUI/src-tauri/target/release/`.
-
-### GUI Features
-
-- **Project Selection** - Choose your C++ project directory
-- **Dependency Management** - Add, remove, and update dependencies through a visual interface
-- **Build Management** - Install and build dependencies with one click
-- **Settings** - Configure GitHub tokens and other settings
-- **Real-time Updates** - See dependency changes immediately
-
-### GUI Workflow
-
-1. **Launch the application** using the development or production build
-2. **Select a project** by choosing a directory containing a package file
-3. **Manage dependencies** using the intuitive interface:
-   - Add new dependencies by searching GitHub repositories
-   - Remove unwanted dependencies
-   - Update existing dependencies
-   - Modify version constraints
-4. **Build your project** with the integrated build tools
 
 ## Package Configuration
 
