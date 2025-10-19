@@ -1,0 +1,21 @@
+.bar{
+    width: 100%;
+    height: 100%;
+    background-color: var(--secondary);
+    border: 1px solid var(--third);
+    color: gray;
+    font-size: 80%;
+    position: relative;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    padding: 5px;
+}
+.errorButton{
+    position: absolute;
+    right: 20px;
+}
+.icon{
+    width: 2vw;
+    height: 2vw;
+}

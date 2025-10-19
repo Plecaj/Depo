@@ -1,3 +1,8 @@
+//! # Package Management
+//!
+//! This module provides the core package management functionality for C++ projects.
+//! It handles dependency resolution, package initialization, and dependency operations.
+
 use crate::build::{BuildSystem, CMake};
 use crate::config::Config;
 use crate::dependency::Dependency;
@@ -6,17 +11,54 @@ use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::Path;
 
+/// Represents a C++ package with its dependencies
+///
+/// A Package contains a collection of dependencies that are managed together.
+/// It provides methods for adding, removing, updating, and searching dependencies.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Package {
+    /// List of dependencies managed by this package
     pub dependencies: Vec<Dependency>,
 }
 impl Package {
+    /// Create a new empty package
+    ///
+    /// # Returns
+    ///
+    /// Returns a new `Package` instance with an empty dependencies list.
     pub fn new() -> Package {
         Package {
             dependencies: Vec::new(),
         }
     }
 
+    /// Initialize a new package in the specified directory
+    ///
+    /// This method creates a new package configuration file (`package.yaml`) in the given directory.
+    /// If a package already exists in the directory, this method will return an error.
+    ///
+    /// # Arguments
+    ///
+    /// * `path` - The directory path where the package should be initialized
+    ///
+    /// # Returns
+    ///
+    /// Returns a `Result<Package>` containing the newly created package or an error if initialization fails.
+    ///
+    /// # Errors
+    ///
+    /// This method will return an error if:
+    /// - A package already exists in the specified directory
+    /// - The directory cannot be written to
+    /// - File I/O operations fail
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use pkgcore::package::Package;
+    ///
+    /// let package = Package::init("./my_project")?;
+    /// ```
     pub fn init(path: &str) -> anyhow::Result<Package> {
         if serialization::package_exists(&path) {
             anyhow::bail!("package already exists");
@@ -27,10 +69,50 @@ impl Package {
         }
     }
 
+    /// Check if a dependency with the given name already exists
+    ///
+    /// # Arguments
+    ///
+    /// * `name` - The name of the dependency to check for
+    ///
+    /// # Returns
+    ///
+    /// Returns `true` if a dependency with the given name exists, `false` otherwise.
     pub fn is_dependency_existing(&self, name: &str) -> bool {
         self.dependencies.iter().any(|d| d.name == name)
     }
 
+    /// Search for dependencies on GitHub
+    ///
+    /// This method searches GitHub repositories for C++ libraries matching the given name.
+    /// It uses the GitHub API to find repositories with the specified name and C++ language tag.
+    ///
+    /// # Arguments
+    ///
+    /// * `name` - The name to search for in GitHub repositories
+    ///
+    /// # Returns
+    ///
+    /// Returns a `Result<Vec<Dependency>>` containing a list of matching dependencies or an error if the search fails.
+    ///
+    /// # Errors
+    ///
+    /// This method will return an error if:
+    /// - GitHub API rate limit is exceeded (suggests adding a GitHub token)
+    /// - Network requests fail
+    /// - API responses cannot be parsed
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use pkgcore::package::Package;
+    ///
+    /// let package = Package::new();
+    /// let dependencies = package.find_dependency("json").await?;
+    /// for dep in dependencies {
+    ///     println!("Found: {}", dep.full_name);
+    /// }
+    /// ```
     pub async fn find_dependency(&self, name: &str) -> anyhow::Result<Vec<Dependency>> {
         use reqwest::Client;
         use serde_json::Value;
@@ -86,6 +168,26 @@ impl Package {
         Ok(repos)
     }
 
+    /// Add a new dependency to the package
+    ///
+    /// This method adds a dependency to the package, installs it to the local filesystem,
+    /// and saves the updated package configuration.
+    ///
+    /// # Arguments
+    ///
+    /// * `dep` - The dependency to add
+    /// * `working_dir` - The working directory where dependencies are installed
+    ///
+    /// # Returns
+    ///
+    /// Returns a `Result<()>` indicating success or failure of the operation.
+    ///
+    /// # Errors
+    ///
+    /// This method will return an error if:
+    /// - A dependency with the same name already exists
+    /// - The dependency installation fails
+    /// - The package configuration cannot be saved
     pub fn add_dependency(&mut self, mut dep: Dependency, working_dir: &str) -> anyhow::Result<()> {
         if self.is_dependency_existing(dep.name.as_str()) {
             anyhow::bail!("package already exists");
@@ -97,6 +199,27 @@ impl Package {
         Ok(())
     }
 
+    /// Remove a dependency from the package
+    ///
+    /// This method removes a dependency from the package, deletes its local installation,
+    /// regenerates the CMake bridge files, and saves the updated package configuration.
+    ///
+    /// # Arguments
+    ///
+    /// * `name` - The name of the dependency to remove
+    /// * `working_dir` - The working directory where dependencies are installed
+    ///
+    /// # Returns
+    ///
+    /// Returns a `Result<()>` indicating success or failure of the operation.
+    ///
+    /// # Errors
+    ///
+    /// This method will return an error if:
+    /// - The dependency is not found in the package
+    /// - File system operations fail
+    /// - CMake bridge generation fails
+    /// - Package configuration cannot be saved
     pub fn remove_dependency(&mut self, name: &str, working_dir: &str) -> anyhow::Result<()> {
         let dep_opt = self.dependencies.iter().find(|d| d.name == name).cloned();
         if dep_opt.is_none() {

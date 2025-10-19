@@ -12,6 +12,7 @@ function Build() {
             console.log("Building dependencies");
         }catch(e){
             console.log("filed building dependencies : " + e);
+            alert(e);
         }
     }
 

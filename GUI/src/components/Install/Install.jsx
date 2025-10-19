@@ -13,6 +13,7 @@ function Install() {
             console.log("Install dependencies");
         }catch(e){
             console.log("problem with installing dependancy :  " + e);
+            alert(e);
         }
     }
 

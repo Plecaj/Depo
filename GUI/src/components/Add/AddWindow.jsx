@@ -2,35 +2,43 @@ import styles from './Add.module.css';
 import { invoke } from "@tauri-apps/api/core";
 import {useContext,  useState} from "react";
 import {PackagesData} from "../../App.jsx";
+import addIcon from "../../assets/add.png";
+import searchIcon from "../../assets/search.png";
+import closeIcon from "../../assets/delete.png";
+
 
 function AddWindow({isVisible, setIsVisible}) {
 
     const {path, fetchData} = useContext(PackagesData);
 
     const [dependency, setDependency] = useState({});
-    const [input, setInput] = useState("");
+    
     const [selectedDep, setSelectedDep] = useState("");
+    const [name, setName] = useState("");
     const [version, setVersion] = useState("");
 
     const HandleInputChange = (e) =>{
-        setInput(e.target.value);
+        setName(e.target.value);
     }
     async function handleSelectChange(e){
         await setSelectedDep(e.target.value);
     }
+
     const handleVersionChange = (e) => {
         setVersion(e.target.value);
     }
 
     async function search(){
-        if(input.length <= 0){return}
+        if(name.length <= 0){return}
         try{
-            let dependency = await invoke('find_dependency' , {path: path, name: input})
+            let dependency = await invoke('find_dependency' , {path: path, name: name})
+
             console.log("found dependency :"+ JSON.stringify(dependency));
             setDependency(dependency);
         }
         catch(e){
             console.log("dependency not found : " + e);
+            alert(e);
         }
     }
 
@@ -38,12 +46,17 @@ function AddWindow({isVisible, setIsVisible}) {
         if(selectedDep === ""){return}
         try{
             let depSelected = Object.values(dependency).find(dep => dep.name.toLowerCase() === selectedDep.toLowerCase());
-            depSelected.version_constraint = version;
+            if(version !== "")
+            {
+                depSelected.version_constraint = version;
+            }
+
             await invoke('add_dependency' , {path: path, dep: depSelected});
-            console.log("dependency added ! with version :"  + depSelected.version_constraint);
+            console.log("dependency added ! with version :"  + depSelected.version);
             fetchData();
         }catch(e){
             console.log("something went wrong with adding dependency : " + e);
+            alert(e);
         }
     }
 
@@ -55,28 +68,29 @@ function AddWindow({isVisible, setIsVisible}) {
                     <div className={styles.window}>
 
                         <div className={styles.header}>
-                            <button className={styles.closeButton} onClick={() => setIsVisible(false)}>X</button>
+                            <button className={styles.closeButton} onClick={() => setIsVisible(false)}> <img src={closeIcon} alt="X" ></img> </button>
                         </div>
 
                         <div className={styles.row}>
-                            <input type="text" value={input} onChange={HandleInputChange} ></input>
-                            <button onClick={search} className={styles.searchButton}> search </button>
+                            <input type="text" value={name} onChange={HandleInputChange} placeholder="name" ></input>
+                            <button onClick={search} className={styles.searchButton}> <img alt="search" src={searchIcon}></img>  </button>
                         </div>
 
-                        <select value={selectedDep} onChange={handleSelectChange}>
-
-                            <option value=""> ----select---  </option>
-                            {Object.values(dependency).map(dep =>
-                                <option key={dep.name} value={dep.name}>
-                                    {dep.name}
-                                </option>
-                            )}
-
-                        </select>
                         <div className={styles.row}>
-                            <input type="text" value={version} onChange={handleVersionChange} ></input>
-                            <button onClick={addDependency} className={styles.searchButton} > add </button>
+                            <select value={selectedDep} onChange={handleSelectChange}>
+
+                                <option value=""> ----select---  </option>
+                                {Object.values(dependency).map(dep =>
+                                    <option key={dep.name} value={dep.name}>
+                                        {dep.name}
+                                    </option>
+                                )}
+
+                            </select>
+                            <input type="text" value={version} onChange={handleVersionChange} placeholder="version" ></input>
                         </div>
+                        <button onClick={addDependency} className={styles.addButton} > <img alt="add" src={addIcon}></img> </button>
+
                     </div>
                 </div>
             }

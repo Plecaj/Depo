@@ -24,6 +24,8 @@ function SelectProject() {
         }catch(e){
             console.log("somthing went wrong! with selecting project path : " + e);
             setError(e);
+            alert(e);
+
         }
     }
 

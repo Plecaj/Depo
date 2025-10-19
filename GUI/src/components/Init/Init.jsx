@@ -1,7 +1,7 @@
 import styles from'./Init.module.css';
 import { open } from "@tauri-apps/plugin-dialog";
 import { invoke } from "@tauri-apps/api/core";
-import {useContext, useState} from "react";
+import {useContext} from "react";
 import {PackagesData} from "../../App.jsx";
 
 function Init() {
@@ -24,13 +24,14 @@ function Init() {
         }catch(e){
             console.log("somthing went wrong! with init project : " + e);
             setError(e);
+            alert(e);
         }
 
     }
 
     return(
         <>
-            <div className={styles.button} onClick={Init} > init </div>
+            <div className={styles.button} onClick={Init} > init Project </div>
         </>
     );
 }

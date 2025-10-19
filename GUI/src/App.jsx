@@ -1,9 +1,11 @@
 import List from './components/List/List.jsx'
 import ManagerBar from './components/ManagerBar/ManagerBar.jsx'
+import HelpBar from "./components/HelpBar/HelpBar.jsx"
+import InfoBar from "./components/InfoBar/InfoBar.jsx"
+
 import styles from './App.module.css'
-import {createContext, useEffect, useState} from "react";
-import HelpBar from "./components/HelpBar/HelpBar.jsx";
-import { invoke } from "@tauri-apps/api/core";
+import {createContext, useEffect, useState} from "react"
+import { invoke } from "@tauri-apps/api/core"
 
 export const PackagesData = createContext(null);
 
@@ -20,6 +22,7 @@ function App() {
             console.log("data fechted");
         }catch(e){
             console.log("filed to fetch data : "  + e);
+            setError(e);
         }
     }
     useEffect(() => {
@@ -41,6 +44,9 @@ function App() {
                         </div>
                         <div className={styles.List}>
                             <List/>
+                        </div>
+                        <div className={styles.InfoBar}>
+                            <InfoBar/>
                         </div>
                     </div>
                 }
