@@ -28,6 +28,7 @@
     background-color: var(--secondary);
     display: flex;
     flex-direction: column;
+    position: relative;
 
 }
 .backGround{
@@ -46,13 +47,13 @@
     background-color: rgba(0, 0, 0, 0.42);
 }
 .closeButton{
-    width: 3vw;
-    height: 3vw;
-    border-radius: 10px;
+    width: 4vw;
+    height: 4vw;
+    border-radius: 25px;
     margin: 10px;
 
     background-color: var(--accent);
-    color: var(--primary);
+    color: white;
     border: none;
 
     display: flex;
@@ -82,7 +83,7 @@ input:focus{
     filter: drop-shadow(0 0 10px var(--accent));
 }
 .searchButton{
-    width: 8%;
+    width: 4vw;
     height: 4vw;
     border-radius: 25px;
 
@@ -99,11 +100,12 @@ input:focus{
     display: flex;
     flex-direction: row;
     width: 100%;
+    align-items: center;
 }
 select{
     width: 40%;
     height: 5vh;
-    color: white;
+    color: gray;
     margin: 15px;
     background-color: var(--third);
     border: 1px solid var(--accent);
@@ -112,3 +114,24 @@ select{
 .searchButton:hover{
     filter: drop-shadow(0 0 10px var(--accent));
 }
+
+.addButton{
+    width: 4vw;
+    height: 4vw;
+    border-radius: 25px;
+
+    position: absolute;
+    bottom: 0;
+    right: 0;
+
+    background-color: var(--accent);
+    color: white;
+    border: none;
+    margin: 10px;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}.add:hover{
+     filter: drop-shadow(0 0 10px var(--accent));
+ }

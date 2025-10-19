@@ -23,17 +23,22 @@ html, body, #root {
     flex-direction: column;
 }
 .List{
-    flex: 8;
+    flex: 7;
+}
+.InfoBar{
+    flex: 0.2;
 }
 .Bar{
     flex:2;
 }
 .HelpBar{
-    flex:0.01;
-    transition: flex 1s ease-in-out;
+    flex:0.1;
+    color: var(--third);
+    transition: flex 1s ease-in-out ,color 1s ease-in-out;
 }
 .HelpBar:hover{
-    flex: 1;
+    color: white;
+    flex: 2;
 }
 .noProject{
     flex:12;

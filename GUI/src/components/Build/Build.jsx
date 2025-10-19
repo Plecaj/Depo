@@ -4,7 +4,7 @@ import {PackagesData} from "../../App.jsx";
 import { invoke } from "@tauri-apps/api/core";
 
 function Build() {
-    const {path}= useContext(PackagesData);
+    const {path, setError}= useContext(PackagesData);
 
     async function build(){
         try{
@@ -12,6 +12,9 @@ function Build() {
             console.log("Building dependencies");
         }catch(e){
             console.log("filed building dependencies : " + e);
+            setError(e);
+            alert(e);
+
         }
     }
 

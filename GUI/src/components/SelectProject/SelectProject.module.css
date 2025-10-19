@@ -6,12 +6,11 @@
     display: flex;
     position: absolute;
     left: 0;
-    top: 10vw;
-    font-size: 1vw;
+    top: 16vw;
+    font-size: 2vw;
     font-weight: 100;
 
     background-color: var(--secondary);
-    color: white;
 
     border-radius: 10px;
     overflow: hidden;
