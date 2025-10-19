@@ -97,7 +97,7 @@ impl BuildSystem for CMake {
         let mut links_file = File::create(&links_path)?;
 
         for dep in deps {
-            let dep_path = deps_dir.join(&dep.name);
+            let dep_path = deps_dir.join(format!("{}@{}", &dep.name, &dep.version).as_str());
             let dep_path_str = dep_path.to_string_lossy().replace("\\", "/");
 
             writeln!(include_file, "add_subdirectory({})", dep_path_str)?;
@@ -108,9 +108,8 @@ impl BuildSystem for CMake {
             )?;
             writeln!(
                 links_file,
-                "target_link_libraries(main PRIVATE {}@{})",
+                "target_link_libraries(main PRIVATE {})",
                 &dep.name,
-                &dep.version
             )?;
         }
 
