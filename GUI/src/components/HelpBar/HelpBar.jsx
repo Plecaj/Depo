@@ -9,7 +9,7 @@ function HelpBar() {
         <>
             <div className={styles.bar}>
                 <img src={icon} alt="icon" className={styles.icon}></img>
-                <div className={styles.line}></div>
+                    <div className={styles.line}></div>
                 <SelectProject/>
                 <Init/>
             </div>

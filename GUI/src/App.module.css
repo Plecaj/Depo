@@ -5,15 +5,12 @@ html, body, #root {
     font-family: "Outfit", sans-serif;
     font-weight: 200;
 }
-
 :root {
     --primary: rgb(28, 28, 30);
     --secondary: rgb(40, 40, 42);
-   --third: rgb(52, 52, 54);
+    --third: rgb(52, 52, 54);
     --accent: rgb(130, 145, 165);
 }
-
-
 .app{
     display: flex;
     flex-direction: row;
@@ -50,6 +47,7 @@ html, body, #root {
     align-items: center;
     text-align: center;
     font-size: 20px;
+    overflow: hidden;
     background-color: var(--primary);
     color: white;
 }

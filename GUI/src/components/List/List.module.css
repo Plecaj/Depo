@@ -33,6 +33,7 @@
     background-color:var(--secondary);
     border: 1px solid var(--third);
 
+
     margin: 10px;
     display: flex;
     align-items: center;
@@ -55,10 +56,11 @@
 .list::-webkit-scrollbar {
     width: 0;
 }
-
 .buttonBox{
+    position: absolute;
     display: flex;
     flex-direction: row;
-    position: absolute;
+    justify-content: center;
+    align-items: center;
     right: 5vw;
 }
