@@ -5,7 +5,7 @@
 //! and building C++ projects with their dependencies.
 
 use clap::{Parser, Subcommand};
-use pkgcore::{
+use depo_core::{
     build::{BuildSystem, CMake},
     config::Config,
     package::Package,
@@ -19,7 +19,7 @@ use std::env;
 /// It supports various subcommands for package management operations.
 #[derive(Parser)]
 #[command(name = "pkg")]
-#[command(about = "A simple c++ package manager", long_about = None)]
+#[command(about = "A simple C++ package manager", long_about = None)]
 struct Cli {
     /// The command to execute
     #[command(subcommand)]
@@ -29,44 +29,65 @@ struct Cli {
 /// Available CLI commands for package management
 #[derive(Subcommand, PartialEq)]
 enum Commands {
-    /// Initialize a new package in the current directory
+    /// Initialize a new C++ package in the current directory
+    #[command(about = "Create a new package in the current directory")]
     Init,
+
     /// Add a new dependency to the package
+    #[command(about = "Add a dependency to your project")]
     Add {
         /// Name of the dependency to add
+        #[arg(help = "Dependency name")]
         name: String,
         /// Optional version constraint for the dependency
-        #[arg(short, long)]
+        #[arg(short, long, help = "Optional version constraint")]
         version: Option<String>,
     },
+
     /// Remove a dependency from the package
+    #[command(about = "Remove a dependency from your project")]
     Delete {
         /// Name of the dependency to remove
+        #[arg(help = "Dependency name to remove")]
         name: String,
     },
-    /// Install all dependencies
+
+    /// Install all dependencies defined in the package
+    #[command(about = "Install all dependencies for the project")]
     Install,
+
     /// Update a specific dependency to its latest version
+    #[command(about = "Update a dependency to the latest version")]
     Update {
         /// Name of the dependency to update
+        #[arg(help = "Dependency name to update")]
         name: String,
     },
+
     /// Build all dependencies
+    #[command(about = "Build all dependencies for the project")]
     Build,
+
     /// List all dependencies in the package
+    #[command(about = "List all dependencies of the project")]
     List,
+
     /// Manage version constraints for dependencies
+    #[command(about = "Modify version constraints of a dependency")]
     Constraint {
         /// Name of the dependency to modify
+        #[arg(help = "Dependency name")]
         name: String,
         /// New version constraint to set
-        #[arg(short, long)]
+        #[arg(short, long, help = "Set a new version constraint")]
         new: Option<String>,
         /// Remove the existing version constraint
-        #[arg(long)]
+        #[arg(long, help = "Remove the existing version constraint")]
         remove: bool,
     },
+
     /// Manage GitHub API token configuration
+    #[command(about = "Manage GitHub API token for private repos")]
     Token {
         /// Token management action to perform
         #[command(subcommand)]
@@ -78,13 +99,17 @@ enum Commands {
 #[derive(Subcommand, PartialEq)]
 enum TokenAction {
     /// Set a new GitHub API token
-    Set { 
+    #[command(about = "Set a new GitHub personal access token")]
+    Set {
         /// The GitHub personal access token
-        token: String 
+        #[arg(help = "Your GitHub token")]
+        token: String
     },
     /// Check if a token is configured
+    #[command(about = "Check if a GitHub token is configured")]
     Check,
     /// Remove the configured token
+    #[command(about = "Remove the configured GitHub token")]
     Remove,
 }
 
@@ -95,6 +120,7 @@ async fn main() -> anyhow::Result<()> {
 
     if let Commands::Init = cli.command {
         Package::init(&working_dir.to_str().unwrap())?;
+        println!("Initialized new package in {}", working_dir.display());
         return Ok(());
     }
 
@@ -162,6 +188,7 @@ async fn main() -> anyhow::Result<()> {
             }
 
             pkg.add_dependency(chosen, &working_dir.to_str().unwrap())?;
+            println!("Added dependency: {}", name);
         }
         Commands::Delete { name } => {
             match pkg.remove_dependency(&name, &working_dir.to_str().unwrap()) {

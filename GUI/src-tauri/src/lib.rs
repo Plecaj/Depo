@@ -1,7 +1,7 @@
-use pkgcore::build::{BuildSystem, CMake};
-use pkgcore::dependency::Dependency;
-use pkgcore::package::Package;
-use pkgcore::serialization;
+use depo_core::build::{BuildSystem, CMake};
+use depo_core::dependency::Dependency;
+use depo_core::package::Package;
+use depo_core::serialization;
 
 #[tauri::command]
 fn init(path: &str) -> Result<Package, String> {
