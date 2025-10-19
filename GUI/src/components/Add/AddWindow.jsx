@@ -9,37 +9,35 @@ import closeIcon from "../../assets/delete.png";
 
 function AddWindow({isVisible, setIsVisible}) {
 
-    const {path, fetchData, setError} = useContext(PackagesData);
+    const {path, fetchData} = useContext(PackagesData);
 
     const [dependency, setDependency] = useState({});
+    
     const [selectedDep, setSelectedDep] = useState("");
-
-    const [input, setInput] = useState("");
+    const [name, setName] = useState("");
     const [version, setVersion] = useState("");
 
     const HandleInputChange = (e) =>{
-        setInput(e.target.value);
+        setName(e.target.value);
     }
     async function handleSelectChange(e){
         await setSelectedDep(e.target.value);
     }
 
-
     const handleVersionChange = (e) => {
-        console.log("handleVersionChange", e.target.value);
         setVersion(e.target.value);
     }
 
     async function search(){
-        if(input.length <= 0){return}
+        if(name.length <= 0){return}
         try{
-            let dependency = await invoke('find_dependency' , {path: path, name: input})
+            let dependency = await invoke('find_dependency' , {path: path, name: name})
+
             console.log("found dependency :"+ JSON.stringify(dependency));
             setDependency(dependency);
         }
         catch(e){
             console.log("dependency not found : " + e);
-            setError(e);
             alert(e);
         }
     }
@@ -52,15 +50,12 @@ function AddWindow({isVisible, setIsVisible}) {
             {
                 depSelected.version_constraint = version;
             }
-            else{
-                depSelected.version_constraint = "newest";
-            }
+
             await invoke('add_dependency' , {path: path, dep: depSelected});
             console.log("dependency added ! with version :"  + depSelected.version_constraint);
             fetchData();
         }catch(e){
             console.log("something went wrong with adding dependency : " + e);
-            setError(e);
             alert(e);
         }
     }
@@ -77,7 +72,7 @@ function AddWindow({isVisible, setIsVisible}) {
                         </div>
 
                         <div className={styles.row}>
-                            <input type="text" value={input} onChange={HandleInputChange} placeholder="name" ></input>
+                            <input type="text" value={name} onChange={HandleInputChange} placeholder="name" ></input>
                             <button onClick={search} className={styles.searchButton}> <img alt="search" src={searchIcon}></img>  </button>
                         </div>
 

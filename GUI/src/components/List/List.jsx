@@ -8,7 +8,7 @@ import SettingsWindow from "./SettingsWindow.jsx";
 
 function List() {
 
-    const {packageData, path, fetchData, setError} = useContext(PackagesData);
+    const {packageData, path, fetchData} = useContext(PackagesData);
     const [isSettingsVisible, setIsSettingsVisible] = useState(false);
 
     async function deleteDep(name){
@@ -18,14 +18,20 @@ function List() {
             fetchData();
         }catch(e){
             console.log(" problem with deleting  dependency " + name + " : " + e);
-            setError(e);
             alert(e);
         }
 
     }
 
     async function updateDep(name){
-
+        try{
+            await invoke('update_dependency', {path: path, name: name});
+            console.log("updated dependency " + name );
+            fetchData();
+        }catch(e){
+            console.log(" problem with updating  dependency " + name + " : " +e);
+            alert(e);
+        }
     }
     const openSettings = () => {
         setIsSettingsVisible(true);
@@ -36,7 +42,7 @@ function List() {
         <div className={styles.list}>
             {packageData &&   Object.values(packageData).map(pkg =>
                 <div className={styles.elements} key={pkg.name}>
-                      {pkg.name}{pkg.version_constraint &&  `@${pkg.version_constraint}` }
+                      {pkg.name}{pkg.version &&  `@${pkg.version}` }
 
                     <div className={`${styles.button} ${styles.settings}`} onClick={openSettings}>
                         settings
@@ -50,11 +56,11 @@ function List() {
                         <img src={icon} alt="delete" ></img>
                     </div>
 
+                    {isSettingsVisible &&
+                        <SettingsWindow isSettingsVisible={isSettingsVisible}  setIsSettingsVisible={setIsSettingsVisible} Package={pkg} ></SettingsWindow>
+                    }
                 </div>
             )}
-            {isSettingsVisible &&
-                <SettingsWindow isSettingsVisible={isSettingsVisible} setIsSettingsVisible={setIsSettingsVisible} ></SettingsWindow>
-            }
         </div>
     );
 }

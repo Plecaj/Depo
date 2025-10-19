@@ -90,7 +90,10 @@ pub fn run() {
             add_dependency,
             delete_dependency,
             install_dependencies,
-            build_dependencies
+            build_dependencies,
+            modify_dependency_constraint,
+            remove_dependency_constraint,
+            update_dependency
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

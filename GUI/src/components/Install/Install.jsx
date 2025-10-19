@@ -5,7 +5,7 @@ import { invoke } from "@tauri-apps/api/core";
 
 function Install() {
 
-    const {path, setError} = useContext(PackagesData);
+    const {path} = useContext(PackagesData);
 
     async function installPkg() {
         try{
@@ -13,7 +13,6 @@ function Install() {
             console.log("Install dependencies");
         }catch(e){
             console.log("problem with installing dependancy :  " + e);
-            setError(e);
             alert(e);
         }
     }
