@@ -39,7 +39,7 @@ A simple C++ package manager that helps you manage dependencies for your C++ pro
    cargo build --release
    ```
 
-3. **Install the CLI (optional):**
+3. **Install the CLI:**
    ```bash
    cargo install --path cli
    ```
@@ -193,6 +193,18 @@ dependencies:
 
 The package manager automatically generates CMake configuration files to integrate your dependencies into your build system. After running `pkg build`, you can include the generated files in your CMakeLists.txt:
 
+```cmake
+cmake_minimum_required(VERSION 3.10)
+project(TestProject)
+
+include(deps/CMakeIncludes.cmake)
+
+add_executable(main src/main.cpp)
+
+include(deps/CMakeLinks.cmake)
+```
+
+Those 2 include lines are required to add in order to work, CMakeIncludes.cmake before adding exe, CMakeLinks.cmake after!!
 
 ## License
 
