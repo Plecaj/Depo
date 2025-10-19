@@ -12,7 +12,7 @@ pub trait BuildSystem {
 pub struct CMake;
 impl BuildSystem for CMake {
     fn build_dependency(dep: &Dependency, working_dir: &str) -> anyhow::Result<()> {
-        let dep_path = Path::new(working_dir).join("deps").join(&dep.name);
+        let dep_path = Path::new(working_dir).join("deps").join(format!("{}@{}", &dep.name, &dep.version));
         let cmake_file = dep_path.join("CMakeLists.txt");
 
         if !cmake_file.exists() {
@@ -72,8 +72,9 @@ impl BuildSystem for CMake {
             )?;
             writeln!(
                 links_file,
-                "target_link_libraries(main PRIVATE {})",
-                dep.name
+                "target_link_libraries(main PRIVATE {}@{})",
+                &dep.name,
+                &dep.version
             )?;
         }
 
