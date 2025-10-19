@@ -54,12 +54,6 @@ fn build_dependencies(path: &str) -> Result<(), String> {
     CMake::generate_dependency_bridge(&pkg.dependencies, &path).map_err(|e| e.to_string())?;
     Ok(())
 }
-
-#[tauri::command]
-async fn get_available_versions(path: &str, name: &str) -> Result<Vec<String>, String> {
-    let pkg = serialization::load_package(path).map_err(|e| e.to_string())?;
-    pkg.get_available_versions(name).await.map_err(|e| e.to_string())
-}
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
@@ -71,8 +65,7 @@ pub fn run() {
             add_dependency,
             delete_dependency,
             install_dependencies,
-            build_dependencies,
-            get_available_versions
+            build_dependencies
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

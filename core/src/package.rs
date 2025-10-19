@@ -76,8 +76,9 @@ impl Package {
                 Some(Dependency::new(
                     repo["name"].as_str()?,
                     repo["full_name"].as_str()?,
-                    repo["html_url"].as_str()?,
+                    repo["clone_url"].as_str()?,
                     None,
+                    "",
                 ))
             })
             .collect();
@@ -85,98 +86,75 @@ impl Package {
         Ok(repos)
     }
 
-    pub fn add_dependency(&mut self, dep: Dependency, working_dir: &str) -> anyhow::Result<()> {
+    pub fn add_dependency(&mut self, mut dep: Dependency, working_dir: &str) -> anyhow::Result<()> {
         if self.is_dependency_existing(dep.name.as_str()) {
             anyhow::bail!("package already exists");
         }
 
         dep.install(&working_dir)?;
         self.dependencies.push(dep);
+        serialization::save_package(&self, working_dir)?;
         Ok(())
     }
 
     pub fn remove_dependency(&mut self, name: &str, working_dir: &str) -> anyhow::Result<()> {
-        if !self.is_dependency_existing(name) {
-            anyhow::bail!("package doesnt exist");
+        let dep_opt = self.dependencies.iter().find(|d| d.name == name).cloned();
+        if dep_opt.is_none() {
+            anyhow::bail!("dependency '{}' not found", name);
         }
+        let dep = dep_opt.unwrap();
+
         self.dependencies.retain(|d| d.name != name);
 
-        let dep_path = Path::new(working_dir).join("deps").join(name);
+        let dep_dir = format!("{}@{}", dep.name, dep.version);
+        let dep_path = Path::new(working_dir).join("deps").join(dep_dir);
+
         if dep_path.exists() {
             fs::remove_dir_all(&dep_path)?;
         }
 
-        CMake::generate_dependency_bridge(&self.dependencies, &working_dir)?;
+        CMake::generate_dependency_bridge(&self.dependencies, working_dir)?;
+        serialization::save_package(&self, working_dir)?;
         Ok(())
     }
 
-    pub async fn get_available_versions(&self, name: &str) -> anyhow::Result<Vec<String>> {
-        use reqwest::Client;
-        use serde_json::Value;
+    pub fn update_dependency(&mut self, name: &str, working_dir: &str) -> anyhow::Result<()> {
+        let dep = self
+            .dependencies
+            .iter_mut()
+            .find(|d| d.name == name)
+            .ok_or_else(|| anyhow::anyhow!("Dependency '{}' not found", name))?;
 
-        let config = Config::load()?;
-        let client = Client::new();
-        let api_url = "https://api.github.com/search/repositories";
-        let query = format!("{} language:C++", name);
-        let params = [
-            ("q", query.as_str()),
-            ("sort", "stars"),
-            ("order", "desc"),
-            ("per_page", "1"),
-        ];
+        let latest = dep.find_latest_matching_version()?;
 
-        let mut request = client
-            .get(api_url)
-            .header("User-Agent", "rust-client")
-            .query(&params);
-
-        if let Some(auth_header) = config.get_auth_header() {
-            request = request.header("Authorization", auth_header);
+        if latest == dep.version {
+            return Ok(());
         }
+        
+        dep.version = latest;
+        dep.install(working_dir)?;
 
-        let response = request.send().await?;
+        serialization::save_package(&self, working_dir)?;
 
-        if response.status() == 403 {
-            let error_text = response.text().await?;
-            if error_text.contains("rate limit") {
-                anyhow::bail!(
-                    "GitHub API rate limit exceeded. Please add a GitHub token to .pkg.env file"
-                );
-            }
-            anyhow::bail!("GitHub API error: {}", error_text);
-        }
+        Ok(())
+    }
 
-        let data: Value = response.json().await?;
-        let empty_vec = vec![];
-        let repos = data["items"].as_array().unwrap_or(&empty_vec);
+    pub fn modify_dependency_constraint(
+        &mut self,
+        name: &str,
+        new_constraint: &str,
+        working_dir: &str,
+    ) -> anyhow::Result<()> {
+        let dep = self
+            .dependencies
+            .iter_mut()
+            .find(|d| d.name == name)
+            .ok_or_else(|| anyhow::anyhow!("Dependency '{}' not found", name))?;
 
-        if repos.is_empty() {
-            anyhow::bail!("No repositories found for '{}'", name);
-        }
+        dep.validate_version_constraint(new_constraint)?;
+        dep.version_constraint = Some(new_constraint.to_string());
 
-        let repo = &repos[0];
-        let repo_url = repo["clone_url"].as_str().unwrap_or("");
-
-        let temp_path = format!(
-            "temp_check_{}_{}",
-            name,
-            std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)?
-                .as_secs()
-        );
-
-        let repo_obj = git2::Repository::clone(repo_url, &temp_path)?;
-        let dep = Dependency::new(
-            repo["name"].as_str().unwrap_or(""),
-            repo["full_name"].as_str().unwrap_or(""),
-            repo_url,
-            None,
-        );
-
-        let versions = dep.get_available_versions(&repo_obj)?;
-
-        let _ = fs::remove_dir_all(&temp_path);
-
-        Ok(versions)
+        self.update_dependency(name, working_dir)?;
+        Ok(())
     }
 }

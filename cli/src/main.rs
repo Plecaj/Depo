@@ -27,10 +27,15 @@ enum Commands {
         name: String,
     },
     Install,
+    Update {
+        name: String,
+    },
     Build,
     List,
-    Versions {
+    Constraint {
         name: String,
+        #[arg(short, long)]
+        new: String,
     },
     Token {
         #[command(subcommand)]
@@ -127,11 +132,17 @@ async fn main() -> anyhow::Result<()> {
             }
         }
         Commands::Install => {
-            for dep in &pkg.dependencies {
+            for dep in pkg.dependencies.iter_mut() {
                 match dep.install(&working_dir.to_str().unwrap()) {
                     Ok(_) => println!("Installed dependency '{}'", dep.name),
                     Err(e) => eprintln!("Failed to install dependency '{}': {}", dep.name, e),
                 }
+            }
+        }
+        Commands::Update { name } => {
+            match pkg.update_dependency(&name, &working_dir.to_str().unwrap()) {
+                Ok(_) => println!("Dependency '{}' updated successfully!", name),
+                Err(e) => eprintln!("Failed to update dependency '{}': {}", name, e),
             }
         }
         Commands::Build => {
@@ -149,29 +160,20 @@ async fn main() -> anyhow::Result<()> {
             } else {
                 println!("Dependencies:");
                 for dep in &pkg.dependencies {
-                    let version_info = match &dep.version_constraint {
-                        Some(constraint) => format!(" (version: {})", constraint),
-                        None => " (latest)".to_string(),
-                    };
-                    println!("  {}{}", dep.name, version_info);
+                    println!("  {}@{}", dep.name, dep.version);
                 }
             }
         }
-        Commands::Versions { name } => {
-            println!("Checking available versions for {}...", name);
-
-            match pkg.get_available_versions(&name).await {
-                Ok(versions) => {
-                    if versions.is_empty() {
-                        println!("No version tags found for {}", name);
-                    } else {
-                        println!("Available versions for {}:", name);
-                        for version in versions {
-                            println!("  {}", version);
-                        }
-                    }
-                }
-                Err(e) => println!("Error getting versions: {}", e),
+        Commands::Constraint { name, new } => {
+            match pkg.modify_dependency_constraint(&name, &new, &working_dir.to_str().unwrap()) {
+                Ok(_) => println!(
+                    "Dependency '{}' constraint updated to '{}' and version updated!",
+                    name, new
+                ),
+                Err(e) => eprintln!(
+                    "Failed to update constraint for dependency '{}': {}",
+                    name, e
+                ),
             }
         }
         Commands::Token { .. } => {
