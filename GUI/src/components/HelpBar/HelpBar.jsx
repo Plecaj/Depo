@@ -1,5 +1,5 @@
 import styles from'./HelpBar.module.css';
-import icon from '../../assets/icon.png'
+import icon from '../../assets/icon.svg'
 import SelectProject from '../SelectProject/SelectProject.jsx';
 import Init from '../Init/Init.jsx';
 
@@ -9,7 +9,7 @@ function HelpBar() {
         <>
             <div className={styles.bar}>
                 <img src={icon} alt="icon" className={styles.icon}></img>
-                <div className={styles.line}>.</div>
+                    <div className={styles.line}></div>
                 <SelectProject/>
                 <Init/>
             </div>

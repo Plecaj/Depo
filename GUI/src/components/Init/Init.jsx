@@ -31,7 +31,7 @@ function Init() {
 
     return(
         <>
-            <div className={styles.button} onClick={Init} > init Project </div>
+            <div className={styles.button} onClick={Init} > Init Project </div>
         </>
     );
 }

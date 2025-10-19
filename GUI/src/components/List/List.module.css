@@ -17,11 +17,9 @@
 .update{
     width: 80px;
     height: 40px;
-    right: 12vw;
     border-radius: 25px;
 }
 .settings{
-    right: 25vw;
     width: 40px;
     height: 40px;
     border-radius: 50%;
@@ -30,14 +28,14 @@
 .delete{
     width: 40px;
     height: 40px;
-    right: 5vw;
     border-radius: 50%;
 }
 .button{
     background-color:var(--secondary);
     border: 1px solid var(--third);
 
-    position: absolute;
+
+    margin: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -58,4 +56,12 @@
 }
 .list::-webkit-scrollbar {
     width: 0;
+}
+.buttonBox{
+    position: absolute;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    right: 5vw;
 }

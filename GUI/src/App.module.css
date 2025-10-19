@@ -5,13 +5,12 @@ html, body, #root {
     font-family: "Outfit", sans-serif;
     font-weight: 200;
 }
-:root{
-    --primary: rgb(23, 16, 16);
-    --secondary:rgb(33, 24, 24);
-    --third:rgb(41, 31, 31);
-    --accent: rgb(54, 34, 34);
+:root {
+    --primary: rgb(28, 28, 30);
+    --secondary: rgb(40, 40, 42);
+    --third: rgb(52, 52, 54);
+    --accent: rgb(130, 145, 165);
 }
-
 .app{
     display: flex;
     flex-direction: row;
@@ -32,13 +31,12 @@ html, body, #root {
     flex:2;
 }
 .HelpBar{
-    flex:0.1;
-    color: var(--third);
-    transition: flex 1s ease-in-out ,color 1s ease-in-out;
+    flex:2;
+    color: white;
+    transition: flex 1s ease-in-out ;
 }
 .HelpBar:hover{
-    color: white;
-    flex: 2;
+    flex: 3;
 }
 .noProject{
     flex:12;
@@ -46,7 +44,8 @@ html, body, #root {
     justify-content: center;
     align-items: center;
     text-align: center;
-    font-size: 5vw;
+    font-size: 20px;
+    overflow: hidden;
     background-color: var(--primary);
     color: white;
 }
