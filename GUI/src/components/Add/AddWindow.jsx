@@ -52,7 +52,7 @@ function AddWindow({isVisible, setIsVisible}) {
             }
 
             await invoke('add_dependency' , {path: path, dep: depSelected});
-            console.log("dependency added ! with version :"  + depSelected.version_constraint);
+            console.log("dependency added ! with version :"  + depSelected.version);
             fetchData();
         }catch(e){
             console.log("something went wrong with adding dependency : " + e);

@@ -1,3 +1,9 @@
+//! # C++ Package Manager CLI
+//!
+//! This is the command-line interface for the C++ package manager.
+//! It provides commands for initializing projects, managing dependencies,
+//! and building C++ projects with their dependencies.
+
 use clap::{Parser, Subcommand};
 use pkgcore::{
     build::{BuildSystem, CMake},
@@ -7,48 +13,78 @@ use pkgcore::{
 };
 use std::env;
 
+/// Main CLI structure for the C++ package manager
+///
+/// This structure defines the command-line interface using clap for argument parsing.
+/// It supports various subcommands for package management operations.
 #[derive(Parser)]
 #[command(name = "pkg")]
 #[command(about = "A simple c++ package manager", long_about = None)]
 struct Cli {
+    /// The command to execute
     #[command(subcommand)]
     command: Commands,
 }
 
+/// Available CLI commands for package management
 #[derive(Subcommand, PartialEq)]
 enum Commands {
+    /// Initialize a new package in the current directory
     Init,
+    /// Add a new dependency to the package
     Add {
+        /// Name of the dependency to add
         name: String,
+        /// Optional version constraint for the dependency
         #[arg(short, long)]
         version: Option<String>,
     },
+    /// Remove a dependency from the package
     Delete {
+        /// Name of the dependency to remove
         name: String,
     },
+    /// Install all dependencies
     Install,
+    /// Update a specific dependency to its latest version
     Update {
+        /// Name of the dependency to update
         name: String,
     },
+    /// Build all dependencies
     Build,
+    /// List all dependencies in the package
     List,
+    /// Manage version constraints for dependencies
     Constraint {
+        /// Name of the dependency to modify
         name: String,
+        /// New version constraint to set
         #[arg(short, long)]
         new: Option<String>,
+        /// Remove the existing version constraint
         #[arg(long)]
         remove: bool,
     },
+    /// Manage GitHub API token configuration
     Token {
+        /// Token management action to perform
         #[command(subcommand)]
         action: TokenAction,
     },
 }
 
+/// Available token management actions
 #[derive(Subcommand, PartialEq)]
 enum TokenAction {
-    Set { token: String },
+    /// Set a new GitHub API token
+    Set { 
+        /// The GitHub personal access token
+        token: String 
+    },
+    /// Check if a token is configured
     Check,
+    /// Remove the configured token
     Remove,
 }
 

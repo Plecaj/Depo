@@ -1,3 +1,8 @@
+//! # Build System Integration
+//!
+//! This module provides build system integration for C++ dependencies.
+//! Currently supports CMake build system with plans for additional build systems.
+
 use crate::dependency::Dependency;
 use std::fs;
 use std::fs::File;
@@ -5,10 +10,41 @@ use std::io::Write;
 use std::path::Path;
 use std::process::Command;
 
+/// Trait defining the interface for build system implementations
+///
+/// This trait allows for different build systems to be supported by the package manager.
+/// Each build system implementation must provide methods for building dependencies and
+/// generating integration files.
 pub trait BuildSystem {
+    /// Build a specific dependency using the build system
+    ///
+    /// # Arguments
+    ///
+    /// * `pkg` - The dependency to build
+    /// * `working_dir` - The working directory where the dependency is installed
+    ///
+    /// # Returns
+    ///
+    /// Returns a `Result<()>` indicating success or failure of the build.
     fn build_dependency(pkg: &Dependency, working_dir: &str) -> anyhow::Result<()>;
+    
+    /// Generate bridge files to integrate dependencies with the main project
+    ///
+    /// # Arguments
+    ///
+    /// * `deps` - List of dependencies to integrate
+    /// * `working_dir` - The working directory where bridge files should be generated
+    ///
+    /// # Returns
+    ///
+    /// Returns a `Result<()>` indicating success or failure of bridge generation.
     fn generate_dependency_bridge(deps: &[Dependency], working_dir: &str) -> anyhow::Result<()>;
 }
+
+/// CMake build system implementation
+///
+/// This struct provides CMake-specific implementation of the BuildSystem trait.
+/// It handles building dependencies using CMake and generating CMake integration files.
 pub struct CMake;
 impl BuildSystem for CMake {
     fn build_dependency(dep: &Dependency, working_dir: &str) -> anyhow::Result<()> {

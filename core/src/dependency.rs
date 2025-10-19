@@ -1,3 +1,8 @@
+//! # Dependency Management
+//!
+//! This module handles individual dependency management including installation,
+//! version resolution, and constraint validation.
+
 use std::fs;
 use git2::Repository;
 use semver::{Version, VersionReq};
@@ -6,16 +11,38 @@ use std::path::{Path, PathBuf};
 use anyhow::Context;
 use tempfile::TempDir;
 
+/// Represents a single dependency with its metadata and version information
+///
+/// A Dependency contains all the information needed to manage a C++ library dependency,
+/// including its GitHub repository information, version constraints, and current version.
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Dependency {
+    /// The short name of the dependency (repository name)
     pub name: String,
+    /// The full repository name (owner/repository)
     pub full_name: String,
+    /// The Git clone URL for the repository
     pub url: String,
+    /// Optional version constraint (e.g., ">=1.0.0", "~2.1.0")
     pub version_constraint: Option<String>,
+    /// The currently installed version
     pub version: String,
 }
 
 impl Dependency {
+    /// Create a new dependency instance
+    ///
+    /// # Arguments
+    ///
+    /// * `name` - The short name of the dependency (repository name)
+    /// * `full_name` - The full repository name (owner/repository)
+    /// * `url` - The Git clone URL for the repository
+    /// * `version_constraint` - Optional version constraint (e.g., ">=1.0.0", "~2.1.0")
+    /// * `version` - The current version string
+    ///
+    /// # Returns
+    ///
+    /// Returns a new `Dependency` instance with the provided information.
     pub fn new(
         name: &str,
         full_name: &str,
@@ -33,6 +60,25 @@ impl Dependency {
         }
     }
 
+    /// Install the dependency to the local filesystem
+    ///
+    /// This method clones the repository, applies version constraints if specified,
+    /// and installs the dependency to the deps directory with version information.
+    ///
+    /// # Arguments
+    ///
+    /// * `working_dir` - The working directory where dependencies should be installed
+    ///
+    /// # Returns
+    ///
+    /// Returns a `Result<()>` indicating success or failure of the installation.
+    ///
+    /// # Errors
+    ///
+    /// This method will return an error if:
+    /// - The repository cannot be cloned
+    /// - Version constraints cannot be resolved
+    /// - File system operations fail
     pub fn install(&mut self, working_dir: &str) -> anyhow::Result<()> {
         let deps_dir = Path::new(working_dir).join("deps");
         fs::create_dir_all(&deps_dir)?;
