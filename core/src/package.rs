@@ -119,22 +119,36 @@ impl Package {
     }
 
     pub fn update_dependency(&mut self, name: &str, working_dir: &str) -> anyhow::Result<()> {
-        let dep = self
+        let index = self
             .dependencies
-            .iter_mut()
-            .find(|d| d.name == name)
+            .iter()
+            .position(|d| d.name == name)
             .ok_or_else(|| anyhow::anyhow!("Dependency '{}' not found", name))?;
+
+        let dep = &mut self.dependencies[index];
+        let old_version = dep.version.clone();
 
         let latest = dep.find_latest_matching_version()?;
 
-        if latest == dep.version {
+        if latest == old_version {
+            println!("Dependency '{}' is already up to date (version {}).", name, latest);
             return Ok(());
         }
-        
-        dep.version = latest;
+
+        let old_dep_path = {
+            let old_dir_name = format!("{}@{}", dep.name, old_version);
+            Path::new(working_dir).join("deps").join(old_dir_name)
+        };
+
+        if old_dep_path.exists() {
+            std::fs::remove_dir_all(&old_dep_path)?;
+        }
+
+        dep.version = latest.clone();
         dep.install(working_dir)?;
 
-        serialization::save_package(&self, working_dir)?;
+        CMake::generate_dependency_bridge(&self.dependencies, working_dir)?;
+        serialization::save_package(self, working_dir)?;
 
         Ok(())
     }
@@ -154,7 +168,27 @@ impl Package {
         dep.validate_version_constraint(new_constraint)?;
         dep.version_constraint = Some(new_constraint.to_string());
 
-        self.update_dependency(name, working_dir)?;
+        serialization::save_package(&self, working_dir)?;
+        Ok(())
+    }
+    pub fn remove_dependency_constraint(
+        &mut self,
+        name: &str,
+        working_dir: &str,
+    ) -> anyhow::Result<()> {
+        let dep = self
+            .dependencies
+            .iter_mut()
+            .find(|d| d.name == name)
+            .ok_or_else(|| anyhow::anyhow!("Dependency '{}' not found", name))?;
+
+        if dep.version_constraint.is_none() {
+            anyhow::bail!("Dependency '{}' has no constraint to remove", name);
+        }
+
+        dep.version_constraint = None;
+
+        serialization::save_package(&self, working_dir)?;
         Ok(())
     }
 }

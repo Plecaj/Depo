@@ -35,7 +35,9 @@ enum Commands {
     Constraint {
         name: String,
         #[arg(short, long)]
-        new: String,
+        new: Option<String>,
+        #[arg(long)]
+        remove: bool,
     },
     Token {
         #[command(subcommand)]
@@ -164,16 +166,25 @@ async fn main() -> anyhow::Result<()> {
                 }
             }
         }
-        Commands::Constraint { name, new } => {
-            match pkg.modify_dependency_constraint(&name, &new, &working_dir.to_str().unwrap()) {
-                Ok(_) => println!(
-                    "Dependency '{}' constraint updated to '{}' and version updated!",
-                    name, new
-                ),
-                Err(e) => eprintln!(
-                    "Failed to update constraint for dependency '{}': {}",
-                    name, e
-                ),
+        Commands::Constraint { name, new, remove } => {
+            if remove {
+                match pkg.remove_dependency_constraint(&name, &working_dir.to_str().unwrap()) {
+                    Ok(_) => println!("Removed constraint for dependency '{}'", name),
+                    Err(e) => eprintln!("Failed to remove constraint for dependency '{}': {}", name, e),
+                }
+            } else if let Some(new_constraint) = new {
+                match pkg.modify_dependency_constraint(&name, &new_constraint, &working_dir.to_str().unwrap()) {
+                    Ok(_) => println!(
+                        "Dependency '{}' constraint updated to '{}'",
+                        name, new_constraint
+                    ),
+                    Err(e) => eprintln!(
+                        "Failed to update constraint for dependency '{}': {}",
+                        name, e
+                    ),
+                }
+            } else {
+                eprintln!("Error: must provide either --new <constraint> or --remove");
             }
         }
         Commands::Token { .. } => {

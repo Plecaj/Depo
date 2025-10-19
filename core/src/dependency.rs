@@ -63,7 +63,7 @@ impl Dependency {
         let temp_dir = TempDir::new()
             .context("Failed to create temporary directory")?;
         let temp_path = temp_dir.path();
-        
+
         let repo = Repository::clone(&self.url, temp_path)
             .context("Failed to clone repository")?;
 
@@ -227,8 +227,8 @@ impl Dependency {
         Ok(tags)
     }
     pub fn validate_version_constraint(&self, constraint: &str) -> anyhow::Result<()> {
-        if VersionReq::parse(constraint).is_ok() {
-            return Ok(());
+        if !VersionReq::parse(constraint).is_ok() {
+            anyhow::bail!("Invalid version constraint: {}", constraint);
         }
 
         Ok(())
