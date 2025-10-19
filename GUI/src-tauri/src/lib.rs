@@ -46,6 +46,31 @@ fn install_dependencies(path: &str) -> Result<(), String> {
 }
 
 #[tauri::command]
+fn update_dependency(path: &str, name: &str) -> Result<(), String> {
+    let mut pkg = serialization::load_package(path).map_err(|e| e.to_string())?;
+    pkg.update_dependency(name, path).map_err(|e| e.to_string())?;
+    serialization::save_package(&pkg, path).map_err(|e| e.to_string())?;
+    Ok(())
+}
+#[tauri::command]
+fn modify_dependency_constraint(path: &str, name: &str, new_constraint: &str) -> Result<(), String> {
+    let mut pkg = serialization::load_package(path).map_err(|e| e.to_string())?;
+    pkg.modify_dependency_constraint(name, new_constraint, path)
+        .map_err(|e| e.to_string())?;
+    serialization::save_package(&pkg, path).map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
+fn remove_dependency_constraint(path: &str, name: &str) -> Result<(), String> {
+    let mut pkg = serialization::load_package(path).map_err(|e| e.to_string())?;
+    pkg.remove_dependency_constraint(name, path)
+        .map_err(|e| e.to_string())?;
+    serialization::save_package(&pkg, path).map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
 fn build_dependencies(path: &str) -> Result<(), String> {
     let mut pkg = serialization::load_package(path).map_err(|e| e.to_string())?;
     for dep in pkg.dependencies.iter_mut() {
