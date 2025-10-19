@@ -1,10 +1,9 @@
-use std::fs::File;
+use crate::dependency::Dependency;
 use std::fs;
+use std::fs::File;
 use std::io::Write;
 use std::path::Path;
 use std::process::Command;
-use crate::dependency::Dependency;
-
 
 pub trait BuildSystem {
     fn build_dependency(pkg: &Dependency, working_dir: &str) -> anyhow::Result<()>;
@@ -23,10 +22,10 @@ impl BuildSystem for CMake {
                 cmake_file.display()
             );
         }
-        
+
         let build_dir = dep_path.join("build");
         fs::create_dir_all(&build_dir)?;
-        
+
         let status = Command::new("cmake")
             .arg("..")
             .current_dir(&build_dir)
@@ -36,7 +35,7 @@ impl BuildSystem for CMake {
         if !status.success() {
             anyhow::bail!("CMake configure failed for {}", dep.name);
         }
-        
+
         let status = Command::new("cmake")
             .arg("--build")
             .arg(".")
@@ -66,8 +65,16 @@ impl BuildSystem for CMake {
             let dep_path_str = dep_path.to_string_lossy().replace("\\", "/");
 
             writeln!(include_file, "add_subdirectory({})", dep_path_str)?;
-            writeln!(include_file, "include_directories({}/include)", dep_path_str)?;
-            writeln!(links_file, "target_link_libraries(main PRIVATE {})", dep.name)?;
+            writeln!(
+                include_file,
+                "include_directories({}/include)",
+                dep_path_str
+            )?;
+            writeln!(
+                links_file,
+                "target_link_libraries(main PRIVATE {})",
+                dep.name
+            )?;
         }
 
         Ok(())

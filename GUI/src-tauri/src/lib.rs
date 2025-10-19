@@ -46,6 +46,31 @@ fn install_dependencies(path: &str) -> Result<(), String> {
 }
 
 #[tauri::command]
+fn update_dependency(path: &str, name: &str) -> Result<(), String> {
+    let mut pkg = serialization::load_package(path).map_err(|e| e.to_string())?;
+    pkg.update_dependency(name, path).map_err(|e| e.to_string())?;
+    serialization::save_package(&pkg, path).map_err(|e| e.to_string())?;
+    Ok(())
+}
+#[tauri::command]
+fn modify_dependency_constraint(path: &str, name: &str, new_constraint: &str) -> Result<(), String> {
+    let mut pkg = serialization::load_package(path).map_err(|e| e.to_string())?;
+    pkg.modify_dependency_constraint(name, new_constraint, path)
+        .map_err(|e| e.to_string())?;
+    serialization::save_package(&pkg, path).map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
+fn remove_dependency_constraint(path: &str, name: &str) -> Result<(), String> {
+    let mut pkg = serialization::load_package(path).map_err(|e| e.to_string())?;
+    pkg.remove_dependency_constraint(name, path)
+        .map_err(|e| e.to_string())?;
+    serialization::save_package(&pkg, path).map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
 fn build_dependencies(path: &str) -> Result<(), String> {
     let mut pkg = serialization::load_package(path).map_err(|e| e.to_string())?;
     for dep in pkg.dependencies.iter_mut() {
@@ -53,12 +78,6 @@ fn build_dependencies(path: &str) -> Result<(), String> {
     }
     CMake::generate_dependency_bridge(&pkg.dependencies, &path).map_err(|e| e.to_string())?;
     Ok(())
-}
-
-#[tauri::command]
-async fn get_available_versions(path: &str, name: &str) -> Result<Vec<String>, String> {
-    let pkg = serialization::load_package(path).map_err(|e| e.to_string())?;
-    pkg.get_available_versions(name).await.map_err(|e| e.to_string())
 }
 pub fn run() {
     tauri::Builder::default()
@@ -71,8 +90,7 @@ pub fn run() {
             add_dependency,
             delete_dependency,
             install_dependencies,
-            build_dependencies,
-            get_available_versions
+            build_dependencies
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

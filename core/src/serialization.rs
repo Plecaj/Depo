@@ -1,7 +1,7 @@
-use crate::package::{Package};
+use crate::package::Package;
+use anyhow::bail;
 use std::fs;
 use std::path::Path;
-use anyhow::bail;
 
 pub fn package_exists(path: &str) -> bool {
     Path::new(path).join("package.yaml").exists()

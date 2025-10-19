@@ -1,6 +1,6 @@
+use anyhow::Result;
 use std::fs;
 use std::path::Path;
-use anyhow::Result;
 
 pub struct Config {
     pub github_token: Option<String>,
@@ -33,6 +33,8 @@ impl Config {
     }
 
     pub fn get_auth_header(&self) -> Option<String> {
-        self.github_token.as_ref().map(|token| format!("Bearer {}", token))
+        self.github_token
+            .as_ref()
+            .map(|token| format!("Bearer {}", token))
     }
 }

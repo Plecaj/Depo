@@ -1,11 +1,11 @@
-use std::env;
 use clap::{Parser, Subcommand};
 use pkgcore::{
-    serialization,
-    build::{CMake, BuildSystem},
-    package::{Package},
+    build::{BuildSystem, CMake},
     config::Config,
+    package::Package,
+    serialization,
 };
+use std::env;
 
 #[derive(Parser)]
 #[command(name = "pkg")]
@@ -24,13 +24,20 @@ enum Commands {
         version: Option<String>,
     },
     Delete {
-        name: String
+        name: String,
     },
     Install,
+    Update {
+        name: String,
+    },
     Build,
     List,
-    Versions {
+    Constraint {
         name: String,
+        #[arg(short, long)]
+        new: Option<String>,
+        #[arg(long)]
+        remove: bool,
     },
     Token {
         #[command(subcommand)]
@@ -40,9 +47,7 @@ enum Commands {
 
 #[derive(Subcommand, PartialEq)]
 enum TokenAction {
-    Set {
-        token: String,
-    },
+    Set { token: String },
     Check,
     Remove,
 }
@@ -50,52 +55,43 @@ enum TokenAction {
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
-    let file_name = "package.yaml";
+    let working_dir = env::current_dir()?;
 
     if let Commands::Init = cli.command {
-        Package::init(file_name)?;
+        Package::init(&working_dir.to_str().unwrap())?;
         return Ok(());
     }
 
     if let Commands::Token { .. } = cli.command {
         match cli.command {
-            Commands::Token { action } => {
-                match action {
-                    TokenAction::Set { token } => {
-                        match Config::create_env_file(&token) {
-                            Ok(_) => println!("GitHub token saved successfully!"),
-                            Err(e) => println!("Error saving token: {}", e),
+            Commands::Token { action } => match action {
+                TokenAction::Set { token } => match Config::create_env_file(&token) {
+                    Ok(_) => println!("GitHub token saved successfully!"),
+                    Err(e) => println!("Error saving token: {}", e),
+                },
+                TokenAction::Check => match Config::load() {
+                    Ok(config) => {
+                        if config.has_token() {
+                            println!("GitHub token is configured");
+                            let token = &config.github_token.unwrap();
+                            println!("Token: ...{}", &token[token.len().saturating_sub(8)..]);
+                        } else {
+                            println!("No GitHub token found");
+                            println!("Use 'pkg token set <your_token>' to add one");
                         }
-                    },
-                    TokenAction::Check => {
-                        match Config::load() {
-                            Ok(config) => {
-                                if config.has_token() {
-                                    println!("GitHub token is configured");
-                                    let token = &config.github_token.unwrap();
-                                    println!("Token: ...{}", &token[token.len().saturating_sub(8)..]);
-                                } else {
-                                    println!("No GitHub token found");
-                                    println!("Use 'pkg token set <your_token>' to add one");
-                                }
-                            },
-                            Err(e) => println!("Error loading config: {}", e),
-                        }
-                    },
-                    TokenAction::Remove => {
-                        match std::fs::remove_file(".pkg.env") {
-                            Ok(_) => println!("GitHub token removed successfully!"),
-                            Err(e) => println!("Error removing token: {}", e),
-                        }
-                    },
-                }
+                    }
+                    Err(e) => println!("Error loading config: {}", e),
+                },
+                TokenAction::Remove => match std::fs::remove_file(".pkg.env") {
+                    Ok(_) => println!("GitHub token removed successfully!"),
+                    Err(e) => println!("Error removing token: {}", e),
+                },
             },
             _ => unreachable!(),
         }
         return Ok(());
     }
-
-    let mut pkg = match serialization::load_package(file_name) {
+    let mut pkg = match serialization::load_package(&working_dir.to_str().unwrap()) {
         Ok(pkg) => pkg,
         Err(e) => {
             if e.to_string().contains("Package file not found") {
@@ -105,7 +101,7 @@ async fn main() -> anyhow::Result<()> {
             return Err(e.into());
         }
     };
-    let working_dir = env::current_dir()?;
+
     match cli.command {
         Commands::Add { name, version } => {
             let mut candidates = pkg.find_dependency(&name).await?;
@@ -124,11 +120,11 @@ async fn main() -> anyhow::Result<()> {
                 .interact()?;
 
             let mut chosen = candidates.remove(selection);
-            
+
             if let Some(version_constraint) = version {
                 chosen.version_constraint = Some(version_constraint);
             }
-            
+
             pkg.add_dependency(chosen, &working_dir.to_str().unwrap())?;
         }
         Commands::Delete { name } => {
@@ -136,13 +132,19 @@ async fn main() -> anyhow::Result<()> {
                 Ok(()) => println!("Deleted dependency: {}", name),
                 Err(e) => eprintln!("Failed to delete dependency '{}': {}", name, e),
             }
-         }
+        }
         Commands::Install => {
-            for dep in &pkg.dependencies {
+            for dep in pkg.dependencies.iter_mut() {
                 match dep.install(&working_dir.to_str().unwrap()) {
                     Ok(_) => println!("Installed dependency '{}'", dep.name),
                     Err(e) => eprintln!("Failed to install dependency '{}': {}", dep.name, e),
                 }
+            }
+        }
+        Commands::Update { name } => {
+            match pkg.update_dependency(&name, &working_dir.to_str().unwrap()) {
+                Ok(_) => println!("Dependency '{}' updated successfully!", name),
+                Err(e) => eprintln!("Failed to update dependency '{}': {}", name, e),
             }
         }
         Commands::Build => {
@@ -160,29 +162,29 @@ async fn main() -> anyhow::Result<()> {
             } else {
                 println!("Dependencies:");
                 for dep in &pkg.dependencies {
-                    let version_info = match &dep.version_constraint {
-                        Some(constraint) => format!(" (version: {})", constraint),
-                        None => " (latest)".to_string(),
-                    };
-                    println!("  {}{}", dep.name, version_info);
+                    println!("  {}@{}", dep.name, dep.version);
                 }
             }
         }
-        Commands::Versions { name } => {
-            println!("Checking available versions for {}...", name);
-            
-            match pkg.get_available_versions(&name).await {
-                Ok(versions) => {
-                    if versions.is_empty() {
-                        println!("No version tags found for {}", name);
-                    } else {
-                        println!("Available versions for {}:", name);
-                        for version in versions {
-                            println!("  {}", version);
-                        }
-                    }
-                },
-                Err(e) => println!("Error getting versions: {}", e),
+        Commands::Constraint { name, new, remove } => {
+            if remove {
+                match pkg.remove_dependency_constraint(&name, &working_dir.to_str().unwrap()) {
+                    Ok(_) => println!("Removed constraint for dependency '{}'", name),
+                    Err(e) => eprintln!("Failed to remove constraint for dependency '{}': {}", name, e),
+                }
+            } else if let Some(new_constraint) = new {
+                match pkg.modify_dependency_constraint(&name, &new_constraint, &working_dir.to_str().unwrap()) {
+                    Ok(_) => println!(
+                        "Dependency '{}' constraint updated to '{}'",
+                        name, new_constraint
+                    ),
+                    Err(e) => eprintln!(
+                        "Failed to update constraint for dependency '{}': {}",
+                        name, e
+                    ),
+                }
+            } else {
+                eprintln!("Error: must provide either --new <constraint> or --remove");
             }
         }
         Commands::Token { .. } => {
@@ -192,6 +194,6 @@ async fn main() -> anyhow::Result<()> {
             unreachable!("Init command should be handled before this match")
         }
     }
-    serialization::save_package(&pkg, file_name)?;
+    serialization::save_package(&pkg, working_dir.to_str().unwrap())?;
     Ok(())
 }
